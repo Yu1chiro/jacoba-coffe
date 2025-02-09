@@ -1,0 +1,54 @@
+
+  /* Font Styles */
+  .dmserif { font-family: 'DM Serif Display', serif; }
+  .poppins { font-family: 'Poppins', sans-serif; }
+  .lora { font-family: 'Lora', serif; }
+  .montserrat { font-family: 'Montserrat', sans-serif; }
+  .raleway { font-family: 'Raleway', sans-serif; }
+  .opensans { font-family: 'Open Sans', sans-serif; }
+  
+  /* Landing Page */
+  .landing-page {
+    background: #cbac85;
+    color: white;
+    text-align: center;
+    padding: 50px 20px;
+  }
+  .landing-page h1 {
+    font-size: 3rem;
+    font-weight: bold;
+  }
+  .landing-page p {
+    font-size: 1.2rem;
+    margin-top: 10px;
+  }
+  
+  /* Services */
+  .services {
+    background: #f8f1e1;
+    padding: 50px 20px;
+    text-align: center;
+  }
+  .services h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+  }
+  .services p {
+    font-size: 1.1rem;
+    margin-top: 8px;
+  }
+  
+  /* Menu Section */
+  .menu {
+    background: #fff;
+    padding: 50px 20px;
+    text-align: center;
+  }
+  .menu h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+  }
+  .menu p {
+    font-size: 1.1rem;
+    margin-top: 8px;
+  }

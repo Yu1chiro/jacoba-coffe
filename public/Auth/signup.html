@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrasi Akun</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[url('/img/IMG_6556.jpg')] bg-cover bg-no-repeat flex items-center justify-center min-h-screen">
+
+  <div class="flex items-center justify-center min-h-screen py-12 px-6 sm:px-10">
+    <div class="max-w-sm mx-auto bg-white p-10 rounded-xl shadow-lg">
+        <h2 class="text-center text-4xl font-bold text-gray-900 mb-8">
+            Registrasi Akun
+        </h2>
+        <form id="regist-admin" class="space-y-6 w-full mx-auto">
+            <div class="space-y-5">
+                <div>
+                    <label for="nama-lengkap" class="block text-lg font-medium text-gray-700">
+                        Nama Lengkap
+                    </label>
+                    <input id="nama-lengkap" name="nama" type="text" required 
+                        class="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="email" class="block text-lg font-medium text-gray-700">
+                        Email
+                    </label>
+                    <input id="email" name="email" type="email" required 
+                        class="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-lg font-medium text-gray-700">
+                        Password
+                    </label>
+                    <input id="password" name="password" type="password" required 
+                        class="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="konfirmasi-password" class="block text-lg font-medium text-gray-700">
+                        Konfirmasi Password
+                    </label>
+                    <input id="konfirmasi-password" name="password" type="password" required 
+                        class="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+            <div>
+                <button type="submit"
+                    class="w-full py-3 px-4 text-lg font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Daftar
+                </button>
+            </div>
+        </form>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script type="module" src="services/signup.js"></script>
+</body>
+</html>

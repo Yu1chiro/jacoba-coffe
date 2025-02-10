@@ -272,7 +272,7 @@ getFirebaseConfig().then(firebaseConfig => {
         cancelButtonText: 'Batal'
       }).then(async (result) => {
         if (result.isConfirmed) {
-          const productRef = ref(database, `basic-seller/${productId}`);
+          const productRef = ref(database, `basic-product/${productId}`);
           await remove(productRef);
           
           Swal.fire(

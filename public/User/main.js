@@ -176,33 +176,139 @@ getFirebaseConfig().then(firebaseConfig => {
 });
 
 async function handleQRISPayment(user, cartItems, totalPrice) {
-    // Tampilkan QR Code (ganti dengan QR code cafe Anda)
-    await Swal.fire({
-        title: 'Scan QR Code',
-        html: `
-            <img src="/User/img/qris.jpeg" class="mx-auto w-64 h-64">
-            <p class="mt-4">Total Pembayaran: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
-        `,
-        confirmButtonText: 'Upload Bukti Pembayaran'
-    });
+    try {
+        // Tampilkan QR Code
+        await Swal.fire({
+            title: 'Scan QR Code',
+            html: `
+                <img src="/User/img/qris.jpeg" class="mx-auto w-64 h-64">
+                <p class="mt-4">Total Pembayaran: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
+            `,
+            confirmButtonText: 'Upload Bukti Pembayaran'
+        });
 
-    // Upload bukti pembayaran
-    const { value: buktiPembayaran } = await Swal.fire({
-        title: 'Upload Bukti Pembayaran',
-        input: 'file',
-        inputAttributes: {
-            accept: 'image/*',
-            'aria-label': 'Upload bukti pembayaran'
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Upload'
-    });
+        // Upload bukti pembayaran
+        const { value: buktiPembayaran } = await Swal.fire({
+            title: 'Upload Bukti Pembayaran',
+            input: 'file',
+            inputAttributes: {
+                accept: 'image/*',
+                'aria-label': 'Upload bukti pembayaran'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Upload'
+        });
 
-    if (buktiPembayaran) {
-        await processOrder(user, cartItems, totalPrice, 'QRIS', buktiPembayaran);
+        if (buktiPembayaran) {
+            // Tampilkan loading state
+            Swal.fire({
+                title: 'Memproses Pembayaran',
+                text: 'Mohon tunggu sebentar...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Fungsi untuk mengompres gambar
+            const compressImage = async (file) => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+
+                            // Maksimum dimensi yang diinginkan
+                            const MAX_WIDTH = 800;
+                            const MAX_HEIGHT = 800;
+
+                            // Hitung rasio aspek
+                            if (width > height) {
+                                if (width > MAX_WIDTH) {
+                                    height *= MAX_WIDTH / width;
+                                    width = MAX_WIDTH;
+                                }
+                            } else {
+                                if (height > MAX_HEIGHT) {
+                                    width *= MAX_HEIGHT / height;
+                                    height = MAX_HEIGHT;
+                                }
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            // Konversi ke base64 dengan kualitas 0.7 (70%)
+                            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                            resolve(compressedBase64);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            // Kompres gambar sebelum upload
+            const compressedPaymentProof = await compressImage(buktiPembayaran);
+            
+            // Create order data
+            const orderData = {
+                items: cartItems,
+                totalPrice: totalPrice,
+                paymentMethod: 'QRIS',
+                paymentProof: compressedPaymentProof,
+                status: 'pending',
+                timestamp: Date.now(),
+                userId: user.uid,
+                customerName: user.displayName
+            };
+
+            // Save to customer-orders
+            const database = getDatabase();
+            const orderRef = ref(database, `customer-orders/${user.uid}/${Date.now()}`);
+            await set(orderRef, orderData);
+
+            // Clear cart after successful order
+            const cartRef = ref(database, `customers/${user.uid}/cart`);
+            await remove(cartRef);
+
+            // Show success message dengan animasi
+            await Swal.fire({
+                icon: 'success',
+                title: 'Pembayaran Berhasil!',
+                html: `
+                    <div class="text-center">
+                        <p class="mb-2">Terima kasih atas pesanan Anda</p>
+                        <p class="text-sm text-gray-600">Pesanan Anda sedang diproses</p>
+                    </div>
+                `,
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                didOpen: () => {
+                    const b = Swal.getHtmlContainer().querySelector('p');
+                    b.style.animation = 'bounce 0.5s ease-in-out';
+                }
+            });
+
+            // Redirect to order history
+            window.location.href = '/User/Dashboard.html';
+        }
+    } catch (error) {
+        console.error('Error processing QRIS payment:', error);
+        await Swal.fire({
+            icon: 'error',
+            title: 'Gagal Memproses Pembayaran',
+            text: 'Silakan coba lagi: ' + error.message
+        });
     }
 }
-
 // First, initialize jsPDF from the window object
 const { jsPDF } = window.jspdf;
 
@@ -230,14 +336,14 @@ async function handleCashPayment(user, cartItems, totalPrice) {
             img.onload = () => {
                 try {
                     // Calculate dimensions to maintain aspect ratio
-                    const imgWidth = 20;
+                    const imgWidth = 10;
                     const imgHeight = (img.height * imgWidth) / img.width;
                     
                     // Add image to PDF, centered at the top
                     doc.addImage(
                         img, 
                         'PNG', 
-                        (80 - imgWidth) / 2, // center horizontally
+                        (10 - imgWidth) / 2, // center horizontally
                         5, // top margin
                         imgWidth,
                         imgHeight
@@ -328,6 +434,8 @@ async function handleCashPayment(user, cartItems, totalPrice) {
 
         // Proses order
         await processOrder(user, cartItems, totalPrice, 'CASH');
+        // Redirect to order history
+        window.location.href = '/User/Dashboard.html';
     } catch (error) {
         console.error('Error generating PDF:', error);
         Swal.fire('Error', 'Gagal membuat nota pembayaran', 'error');
@@ -349,7 +457,7 @@ function generateReceiptHTML(cartItems, totalPrice, customerName) {
     return `
         <div id="receipt-preview" class="bg-white p-8 max-w-[380px] mx-auto font-mono text-sm leading-tight">
             <div class="text-center mb-6">
-                <img src="/img/logo.png" class="w-20 h-20 mx-auto mb-3 object-contain">
+            <img src="/img/logo.png" width="10px" height="auto" class="mx-auto mb-3 object-contain">
                 <h2 class="text-xl font-bold mb-1">Nature Coffe</h2>
                 <p class="mb-1">Jalan Pantura</p>
                 <p class="mb-1">Telp: 12345678</p>

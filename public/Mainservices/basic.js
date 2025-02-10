@@ -360,25 +360,25 @@ async function updateProductQuantity(userId, productId, change) {
       }
     }
 }
-  // Fungsi untuk menampilkan produk bestseller
-  function loadBestsellerProducts() {
-    const bestsellerRef = ref(database, 'best-seller');
-    const bestSellerContainer = document.getElementById("bestcard");
+  // Fungsi untuk menampilkan produk basic
+  function loadbasicProducts() {
+    const basicRef = ref(database, 'basic-product');
+    const basicContainer = document.getElementById("basic-card");
   
     try {
       // Cek apakah data ada di sessionStorage dan tidak terlalu besar
-      const cachedData = sessionStorage.getItem("bestsellerProducts");
+      const cachedData = sessionStorage.getItem("basicProducts");
   
       if (cachedData && cachedData.length < 5000000) { // 5MB batas aman
-        renderBestsellerProducts(JSON.parse(cachedData));
+        renderbasicProducts(JSON.parse(cachedData));
       }
     } catch (error) {
       console.warn("Cache tidak dapat digunakan:", error);
-      sessionStorage.removeItem("bestsellerProducts"); // Hapus cache rusak
+      sessionStorage.removeItem("basicProducts"); // Hapus cache rusak
     }
   
     // Ambil data dari Firebase
-    onValue(bestsellerRef, (snapshot) => {
+    onValue(basicRef, (snapshot) => {
       if (snapshot.exists()) {
         const products = [];
         snapshot.forEach((childSnapshot) => {
@@ -391,29 +391,29 @@ async function updateProductQuantity(userId, productId, change) {
         try {
           const jsonData = JSON.stringify(products);
           if (jsonData.length < 5000000) {
-            sessionStorage.setItem("bestsellerProducts", jsonData);
+            sessionStorage.setItem("basicProducts", jsonData);
           }
         } catch (error) {
           console.warn("Gagal menyimpan cache:", error);
         }
   
-        renderBestsellerProducts(products);
+        renderbasicProducts(products);
       } else {
-        bestSellerContainer.innerHTML = "<p class='text-gray-500'>Tidak ada produk bestseller.</p>";
+        basicContainer.innerHTML = "<p class='text-gray-500'>Tidak ada produk basic.</p>";
       }
     });
   }
   
   // Fungsi untuk merender produk
-  function renderBestsellerProducts(products) {
-    const bestSellerContainer = document.getElementById("bestcard");
-    bestSellerContainer.innerHTML = "";
+  function renderbasicProducts(products) {
+    const basicContainer = document.getElementById("basic-card");
+    basicContainer.innerHTML = "";
   
     products.forEach((product) => {
       const formattedPrice = new Intl.NumberFormat('id-ID').format(product.price);
   
       const productCard = `
-        <div class="relative max-w-sm text-[#3e1e04] bg-[#cbac85] border border-gray-200 rounded-lg shadow-sm" data-product-id="${product.id}">
+        <div class="relative max-w-sm text-[#cbac85] bg-[#3e1e04] border border-gray-200 rounded-lg shadow-sm" data-product-id="${product.id}">
           <div class="relative">
             <img class="rounded-t-lg w-full h-48 object-cover" src="${product.thumbnail}" alt="${product.name}" />
             <span class="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded-lg shadow-md">
@@ -423,7 +423,7 @@ async function updateProductQuantity(userId, productId, change) {
           <div class="p-5">
             <h5 class="mb-2 text-2xl font-bold tracking-wide">${product.name}</h5>
             <p class="mb-3 font-medium text-lg">Rp. ${formattedPrice}</p>
-            <button class="order-button inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#3e1e04] rounded-lg hover:bg-[#2d1503] transition duration-300">
+            <button class="order-button inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-700 rounded-lg hover:bg-yellow-900 transition duration-300">
               <svg class="me-2" xmlns="http://www.w3.org/2000/svg" fill="white" height="20px" width="20px" viewBox="0 0 24 24">
                 <g id="shop-cart">
                   <circle cx="9" cy="21" r="2"/>
@@ -437,7 +437,7 @@ async function updateProductQuantity(userId, productId, change) {
         </div>
       `;
   
-      bestSellerContainer.innerHTML += productCard;
+      basicContainer.innerHTML += productCard;
     });
   
     setupOrderButtons();
@@ -499,5 +499,5 @@ async function updateProductQuantity(userId, productId, change) {
   });
 
   // Panggil fungsi saat halaman dimuat
-  loadBestsellerProducts();
+  loadbasicProducts();
 });

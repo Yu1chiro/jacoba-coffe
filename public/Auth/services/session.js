@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
 async function getFirebaseConfig() {
   try {
@@ -17,92 +17,104 @@ function getCurrentPath() {
   return window.location.pathname;
 }
 
-async function checkAdminRole(user, db) {
-  if (!user) return false;
+async function checkAdminRole(user, database) {
+  try {
+    if (!user?.uid) return false;
+    
+    const adminRef = ref(database, `admin/${user.uid}`);
+    const snapshot = await get(adminRef);
+    
+    if (!snapshot.exists()) {
+      console.warn('User tidak ditemukan di database admin');
+      return false;
+    }
+    
+    const adminData = snapshot.val();
+    return adminData?.role === 'admin';
+  } catch (error) {
+    console.error('Error saat memeriksa role admin:', error);
+    return false;
+  }
+}
+
+async function redirectBasedOnAuth(user, database) {
+  const currentPath = getCurrentPath();
+  const isAuthPage = currentPath === '/Auth/sign.html';
+  const isDashboardPage = currentPath.startsWith('/Dashboard/');
 
   try {
-    const userRef = doc(db, 'users', user.uid);
-    const userSnap = await getDoc(userRef);
-    
-    if (userSnap.exists()) {
-      const userData = userSnap.data();
-      return userData.role === 'admin';  // Pastikan Firestore menyimpan role sebagai "admin"
+    if (!user) {
+      sessionStorage.removeItem('isLoggedIn');
+      if (!isAuthPage) {
+        window.location.href = '/Auth/sign.html';
+      }
+      return;
     }
-  } catch (error) {
-    console.error('Error fetching user role:', error);
-  }
 
-  return false;
-}
+    const isAdmin = await checkAdminRole(user, database);
+    
+    if (!isAdmin) {
+      await signOut(getAuth());
+      sessionStorage.removeItem('isLoggedIn');
+      window.location.href = '/Auth/sign.html';
+      return;
+    }
 
-async function handleAuthRedirect(user, db) {
-  const currentPath = getCurrentPath();
-
-  if (user) {
     sessionStorage.setItem('isLoggedIn', 'true');
     
-    const isAdmin = await checkAdminRole(user, db);
-    if (!isAdmin) {
-      alert('Akses ditolak: Anda bukan admin!');
-      signOut(getAuth());
-      return;
-    }
-
-    if (currentPath === '/Auth/sign.html') {
+    if (isAuthPage || !isDashboardPage) {
       window.location.href = '/Dashboard/admin.html';
-      return;
     }
-
-    if (!currentPath.startsWith('/Dashboard/')) {
-      window.location.href = '/Dashboard/admin.html';
-      return;
-    }
-  } else {
-    sessionStorage.removeItem('isLoggedIn');
-    if (currentPath !== '/Auth/sign.html') {
-      window.location.href = '/Auth/sign.html';
-    }
+  } catch (error) {
+    console.error('Error dalam proses redirect:', error);
+    window.location.href = '/Auth/sign.html';
   }
 }
 
+function initializeUIElements(user) {
+  const content = document.getElementById('content');
+  const hide = document.getElementById('hide-element');
+
+  if (!content || !hide) return;
+
+  const updateDisplay = () => {
+    const isMobile = window.innerWidth < 768;
+    content.style.display = user && !isMobile ? 'block' : 'none';
+    hide.style.display = user ? 'block' : 'none';
+  };
+
+  updateDisplay();
+  window.addEventListener('resize', updateDisplay);
+}
+
+function setupLogoutHandler(auth) {
+  const logoutButton = document.getElementById('logout-session');
+  if (!logoutButton) return;
+
+  logoutButton.addEventListener('click', async () => {
+    try {
+      await signOut(auth);
+      sessionStorage.removeItem('isLoggedIn');
+      window.location.href = '/Auth/sign.html';
+    } catch (error) {
+      console.error('Error saat logout:', error);
+    }
+  });
+}
+
+// Inisialisasi aplikasi
 getFirebaseConfig().then(firebaseConfig => {
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
+  const database = getDatabase(app);
 
-  onAuthStateChanged(auth, (user) => {
-    handleAuthRedirect(user, db);
-
-    const content = document.getElementById('content');
-    const hide = document.getElementById('hide-element');
-
-    if (user && content && hide) {
-      const updateDisplay = () => {
-        if (window.innerWidth < 768) {
-          content.style.display = 'none';
-          hide.style.display = 'block';
-        } else {
-          content.style.display = 'block';
-          hide.style.display = 'block';
-        }
-      };
-
-      updateDisplay();
-      window.addEventListener('resize', updateDisplay);
-    }
+  onAuthStateChanged(auth, async (user) => {
+    await redirectBasedOnAuth(user, database);
+    initializeUIElements(user);
   });
 
-  const logoutButton = document.getElementById('logout-session');
-  if (logoutButton) {
-    logoutButton.addEventListener('click', () => {
-      signOut(auth)
-        .then(() => {
-          sessionStorage.removeItem('isLoggedIn');
-          window.location.href = '/Auth/sign.html';
-        })
-        .catch((error) => {
-          console.error('Logout error:', error);
-        });
-    });
-  }
+  setupLogoutHandler(auth);
+}).catch(error => {
+  console.error('Error saat inisialisasi aplikasi:', error);
+  window.location.href = '/Auth/sign.html';
 });

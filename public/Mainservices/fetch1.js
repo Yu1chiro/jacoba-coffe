@@ -349,8 +349,8 @@ async function updateProductQuantity(userId, productId, change) {
         console.error('Error processing order:', error);
         await Swal.fire({
           icon: 'error',
-          title: 'Gagal memproses pesanan',
-          text: 'Terjadi kesalahan, silakan coba lagi',
+          title: 'Oops! ada  yg salah coba hapus cookies browser refresh dan coba order kembali',
+          text: 'Oops! ada  yg salah coba hapus cookies browser refresh dan coba order kembali',
           customClass: {
             popup: 'w-[90%] max-w-[500px]',
             confirmButton: 'w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-[2%] px-[4%] rounded-lg transition-all'
@@ -416,7 +416,7 @@ async function updateProductQuantity(userId, productId, change) {
         <div class="relative max-w-sm text-[#3e1e04] bg-[#cbac85] border border-gray-200 rounded-lg shadow-sm" data-product-id="${product.id}">
           <div class="relative">
             <img class="rounded-t-lg w-full h-48 object-cover" src="${product.thumbnail}" alt="${product.name}" />
-            <span class="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded-lg shadow-md">
+            <span class="absolute top-2 right-2  bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded-lg shadow-md">
               ${product.variant || 'N/A'}
             </span>
           </div>
@@ -447,6 +447,7 @@ async function updateProductQuantity(userId, productId, change) {
   // Setup order buttons dengan flow yang baru
   function setupOrderButtons() {
     const orderButtons = document.querySelectorAll('.order-button');
+    
     orderButtons.forEach(button => {
       button.addEventListener('click', async () => {
         try {
@@ -454,23 +455,60 @@ async function updateProductQuantity(userId, productId, change) {
           const productData = getProductData(button);
           
           if (!user) {
-            // Proses login
-            const user = await signInWithGoogle();
-            if (user) {
-              // Setelah login, tampilkan form checkout
-              await showCheckoutForm(productData, user.uid);
+            // Cek koneksi internet terlebih dahulu
+            if (!navigator.onLine) {
+              await Swal.fire({
+                icon: 'error',
+                title: 'Tidak Ada Koneksi Internet',
+                text: 'Silakan periksa koneksi internet Anda dan coba lagi',
+                customClass: {
+                  popup: 'w-[90%] max-w-[500px]',
+                  confirmButton: 'w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-[2%] px-[4%] rounded-lg transition-all'
+                },
+                buttonsStyling: false
+              });
+              return;
+            }
+  
+            try {
+              const user = await signInWithGoogle();
+              if (user) {
+                await showCheckoutForm(productData, user.uid);
+              }
+              // Jika user membatalkan login, tidak perlu melakukan apa-apa
+              return;
+            } catch (authError) {
+              // Cek apakah error adalah pembatalan login
+              if (authError.code === 'auth/popup-closed-by-user' || 
+                  authError.code === 'auth/cancelled-popup-request') {
+                return; // Keluar tanpa menampilkan pesan error
+              }
+              // Untuk error autentikasi lainnya, tetap log ke console
+              console.log("Sign-in error:", authError);
+              return;
             }
           } else {
-            // User sudah login, langsung tampilkan form checkout
             await showCheckoutForm(productData, user.uid);
           }
         } catch (error) {
-          console.error("Error:", error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Terjadi Kesalahan',
-            text: 'Gagal memproses pesanan'
-          });
+          console.error("Error dalam proses order:", error);
+          
+          // Hanya tampilkan error untuk masalah non-autentikasi yang serius
+          if (!error.code?.includes('auth/') && 
+              navigator.onLine && 
+              error.code !== 'popup-closed' && 
+              error.code !== 'popup-blocked') {
+            await Swal.fire({
+              icon: 'error',
+              title: 'Terjadi Kesalahan',
+              text: 'Oops! ada  yg salah coba hapus cookies browser refresh dan coba order kembali',
+              customClass: {
+                popup: 'w-[90%] max-w-[500px]',
+                confirmButton: 'w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-[2%] px-[4%] rounded-lg transition-all'
+              },
+              buttonsStyling: false
+            });
+          }
         }
       });
     });

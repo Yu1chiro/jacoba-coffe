@@ -154,544 +154,593 @@ getFirebaseConfig().then(firebaseConfig => {
     });
 
     // Tampilkan modal pemilihan metode pembayaran
-    const { value: paymentMethod } = await Swal.fire({
+    const modalResult = await Swal.fire({
         title: 'Pilih Metode Pembayaran',
-        input: 'radio',
-        inputOptions: {
-            'QRIS': 'QRIS',
-            'CASH': 'CASH'
-        },
-        inputValidator: (value) => {
-            if (!value) {
-                return 'Pilih metode pembayaran!';
-            }
+        html: `
+            <div class="flex flex-col space-y-4 text-left">
+                <div class="payment-option flex items-center space-x-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100" data-method="QRIS">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/QRIS_logo.svg" class="w-10 h-10" alt="QRIS">
+                    <span class="text-lg font-semibold">QRIS : Transfer</span>
+                </div>
+                <div class="payment-option flex items-center space-x-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100" data-method="CASH">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Cash_icon.svg" class="w-10 h-10" alt="CASH">
+                    <span class="text-lg font-semibold">CASH : Tunai</span>
+                </div>
+            </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Batal',
+        allowOutsideClick: false,
+        didOpen: () => {
+            // Tambahkan event listener untuk opsi pembayaran
+            const paymentOptions = document.querySelectorAll('.payment-option');
+            paymentOptions.forEach(option => {
+                option.addEventListener('click', async () => {
+                    const method = option.dataset.method;
+                    Swal.close();
+                    
+                    // Proses sesuai metode yang dipilih
+                    if (method === 'QRIS') {
+                        await handleQRISPayment(user, cartItems, totalPrice);
+                    } else if (method === 'CASH') {
+                        await handleCashPayment(user, cartItems, totalPrice);
+                    }
+                });
+            });
         }
     });
 
-    if (paymentMethod === 'QRIS') {
-        await handleQRISPayment(user, cartItems, totalPrice);
-    } else {
-        await handleCashPayment(user, cartItems, totalPrice);
+    // Jika user membatalkan atau mengklik di luar, tidak ada aksi yang dijalankan
+    if (modalResult.dismiss === Swal.DismissReason.cancel || 
+        modalResult.dismiss === Swal.DismissReason.backdrop) {
+        return;
     }
-});
-
-async function handleQRISPayment(user, cartItems, totalPrice) {
-    try {
-        // Tampilkan QR Code
-        await Swal.fire({
-            title: 'Scan QR Code',
-            html: `
-                <img src="/User/img/qris.jpeg" class="mx-auto w-64 h-64">
-                <p class="mt-4">Total Pembayaran: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
-            `,
-            confirmButtonText: 'Upload Bukti Pembayaran'
-        });
-
-        // Upload bukti pembayaran
-        const { value: buktiPembayaran } = await Swal.fire({
-            title: 'Upload Bukti Pembayaran',
-            input: 'file',
-            inputAttributes: {
-                accept: 'image/*',
-                'aria-label': 'Upload bukti pembayaran'
-            },
-            showCancelButton: true,
-            confirmButtonText: 'Upload'
-        });
-
-        if (buktiPembayaran) {
-            // Tampilkan loading state
-            Swal.fire({
-                title: 'Memproses Pembayaran',
-                text: 'Mohon tunggu sebentar...',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+    
+    async function handleQRISPayment(user, cartItems, totalPrice) {
+        try {
+            // Tampilkan QR Code dan tunggu user mengklik tombol Upload Bukti Pembayaran
+            const qrResult = await Swal.fire({
+                title: 'Scan QR Code',
+                html: `
+                    <img src="/User/img/qris.jpeg" class="mx-auto w-64 h-64">
+                    <p class="mt-4">Total Pembayaran: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
+                `,
+                confirmButtonText: 'Upload Bukti Pembayaran',
+                showCancelButton: true,
+                cancelButtonText: 'Batal'
             });
-
-            // Fungsi untuk mengompres gambar
-            const compressImage = async (file) => {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            let width = img.width;
-                            let height = img.height;
-
-                            // Maksimum dimensi yang diinginkan
-                            const MAX_WIDTH = 800;
-                            const MAX_HEIGHT = 800;
-
-                            // Hitung rasio aspek
-                            if (width > height) {
-                                if (width > MAX_WIDTH) {
-                                    height *= MAX_WIDTH / width;
-                                    width = MAX_WIDTH;
-                                }
-                            } else {
-                                if (height > MAX_HEIGHT) {
-                                    width *= MAX_HEIGHT / height;
-                                    height = MAX_HEIGHT;
-                                }
-                            }
-
-                            canvas.width = width;
-                            canvas.height = height;
-
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, width, height);
-
-                            // Konversi ke base64 dengan kualitas 0.7 (70%)
-                            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                            resolve(compressedBase64);
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
+    
+            // Hanya lanjut ke proses upload jika user mengklik tombol Upload Bukti Pembayaran
+            if (qrResult.isConfirmed) {
+                // Upload bukti pembayaran
+                const { value: buktiPembayaran } = await Swal.fire({
+                    title: 'Upload Bukti Pembayaran',
+                    input: 'file',
+                    inputAttributes: {
+                        accept: 'image/*',
+                        'aria-label': 'Upload bukti pembayaran'
+                    },
+                    showCancelButton: true,
+                    confirmButtonText: 'Upload'
                 });
-            };
-
-            // Kompres gambar sebelum upload
-            const compressedPaymentProof = await compressImage(buktiPembayaran);
+    
+                if (buktiPembayaran) {
+                    // Tampilkan loading state
+                    Swal.fire({
+                        title: 'Memproses Pembayaran',
+                        text: 'Mohon tunggu sebentar...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+    
+                    // Fungsi untuk mengompres gambar
+                    const compressImage = async (file) => {
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const canvas = document.createElement('canvas');
+                                    let width = img.width;
+                                    let height = img.height;
+    
+                                    // Maksimum dimensi yang diinginkan
+                                    const MAX_WIDTH = 800;
+                                    const MAX_HEIGHT = 800;
+    
+                                    // Hitung rasio aspek
+                                    if (width > height) {
+                                        if (width > MAX_WIDTH) {
+                                            height *= MAX_WIDTH / width;
+                                            width = MAX_WIDTH;
+                                        }
+                                    } else {
+                                        if (height > MAX_HEIGHT) {
+                                            width *= MAX_HEIGHT / height;
+                                            height = MAX_HEIGHT;
+                                        }
+                                    }
+    
+                                    canvas.width = width;
+                                    canvas.height = height;
+    
+                                    const ctx = canvas.getContext('2d');
+                                    ctx.drawImage(img, 0, 0, width, height);
+    
+                                    // Konversi ke base64 dengan kualitas 0.7 (70%)
+                                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                                    resolve(compressedBase64);
+                                };
+                                img.src = e.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                    };
+    
+                    // Kompres gambar sebelum upload
+                    const compressedPaymentProof = await compressImage(buktiPembayaran);
+                    
+                    // Create order data
+                    const orderData = {
+                        items: cartItems,
+                        totalPrice: totalPrice,
+                        paymentMethod: 'QRIS',
+                        paymentProof: compressedPaymentProof,
+                        status: 'pending',
+                        timestamp: Date.now(),
+                        userId: user.uid,
+                        customerName: user.displayName
+                    };
+    
+                    // Save to customer-orders
+                    const database = getDatabase();
+                    const orderRef = ref(database, `customer-orders/${user.uid}/${Date.now()}`);
+                    await set(orderRef, orderData);
+    
+                    // Clear cart after successful order
+                    const cartRef = ref(database, `customers/${user.uid}/cart`);
+                    await remove(cartRef);
+    
+                    // Show success message dengan animasi
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Pembayaran Berhasil!',
+                        html: `
+                            <div class="text-center">
+                                <p class="mb-2">Terima kasih atas pesanan Anda</p>
+                                <p class="text-sm text-gray-600">Pesanan Anda sedang diproses</p>
+                            </div>
+                        `,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            const b = Swal.getHtmlContainer().querySelector('p');
+                            b.style.animation = 'bounce 0.5s ease-in-out';
+                        }
+                    });
+    
+                    // Redirect to order history
+                    window.location.href = '/User/Dashboard.html';
+                }
+            }
+        } catch (error) {
+            console.error('Error processing QRIS payment:', error);
+            await Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memproses Pembayaran',
+                text: 'Silakan coba lagi: ' + error.message
+            });
+        }
+    }
+    // First, initialize jsPDF from the window object
+    const { jsPDF } = window.jspdf;
+    async function handleCashPayment(user, cartItems, totalPrice) {
+        const receiptHTML = generateReceiptHTML(cartItems, totalPrice, user.displayName);
+        
+        // Tampilkan modal nota pembayaran dan tunggu respon user
+        const result = await Swal.fire({
+            title: 'Nota Pembayaran',
+            html: receiptHTML,
+            confirmButtonText: 'Konfirmasi Pembayaran',
+            cancelButtonText: 'Batal',
+            showCancelButton: true,
+            allowOutsideClick: false // Mencegah modal tertutup ketika klik di luar
+        });
+    
+        // Hanya lanjutkan proses jika user mengklik tombol konfirmasi
+        if (result.isConfirmed) {
+            try {
+                // Create new PDF document
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: [80, 200]
+                });
+    
+                    // Load and add logo
+            await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        // Calculate dimensions to maintain aspect ratio
+                        const imgWidth = 10;
+                        const imgHeight = (img.height * imgWidth) / img.width;
+                        
+                        // Add image to PDF, centered at the top
+                        doc.addImage(
+                            img, 
+                            'PNG', 
+                            (10 - imgWidth) / 2, // center horizontally
+                            5, // top margin
+                            imgWidth,
+                            imgHeight
+                        );
+                        resolve();
+                    } catch (err) {
+                        console.error('Error adding image to PDF:', err);
+                        resolve(); // Continue without logo if there's an error
+                    }
+                };
+                img.onerror = () => {
+                    console.error('Error loading logo');
+                    resolve(); // Continue without logo if loading fails
+                };
+                img.src = '/img/logo.png';
+            });
+    
+            // Set font
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+    
+            // Header text (adjusted y-positions to accommodate logo)
+            doc.setFontSize(12);
+            doc.text('Nature Coffe', 40, 30, { align: 'center' });
+            doc.setFontSize(8);
+            doc.text('Jalan Pantura', 40, 35, { align: 'center' });
+            doc.text('Telp: 12345678', 40, 40, { align: 'center' });
+    
+            // Garis pemisah
+            doc.line(5, 42, 75, 42);
+    
+            // Informasi Order
+            const date = new Date().toLocaleString('id-ID');
+            doc.text(`Tanggal: ${date}`, 5, 47);
+            doc.text(`Customer: ${user.displayName}`, 5, 52);
+            doc.text(`Order #${Date.now().toString().slice(-6)}`, 5, 57);
+    
+            // Garis pemisah
+            doc.line(5, 59, 75, 59);
+    
+            // Items
+            let yPos = 64;
+            cartItems.forEach(item => {
+                doc.text(item.name, 5, yPos);
+                doc.text(`${item.quantity} x Rp ${new Intl.NumberFormat('id-ID').format(item.price)}`, 5, yPos + 4);
+                doc.text(`Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}`, 75, yPos + 4, { align: 'right' });
+                yPos += 10;
+            });
+    
+            // Garis pemisah
+            doc.line(5, yPos, 75, yPos);
+            yPos += 5;
+    
+            // Total
+            doc.setFontSize(10);
+            doc.text('Total:', 5, yPos);
+            doc.text(`Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}`, 75, yPos, { align: 'right' });
             
-            // Create order data
-            const orderData = {
-                items: cartItems,
-                totalPrice: totalPrice,
-                paymentMethod: 'QRIS',
-                paymentProof: compressedPaymentProof,
-                status: 'pending',
-                timestamp: Date.now(),
-                userId: user.uid,
-                customerName: user.displayName
+            // Catatan
+            const orderNotes = document.getElementById('orderNotes').value;
+            if (orderNotes) {
+                yPos += 10;
+                doc.setFontSize(8);
+                doc.text('Catatan:', 5, yPos);
+                const splitNotes = doc.splitTextToSize(orderNotes, 65);
+                splitNotes.forEach(line => {
+                    yPos += 4;
+                    doc.text(line, 5, yPos);
+                });
+            }
+    
+            // Garis pemisah
+            yPos += 7;
+            doc.line(5, yPos, 75, yPos);
+    
+            // WiFi Info
+            yPos += 5;
+            doc.text('WiFi: NatureCoffe', 40, yPos, { align: 'center' });
+            doc.text('Password: pantura2024', 40, yPos + 4, { align: 'center' });
+    
+            // Footer
+            yPos += 10;
+            doc.text('== Terima kasih ==', 40, yPos, { align: 'center' });
+            doc.text('Selamat menikmati!', 40, yPos + 4, { align: 'center' });
+            
+                // Download PDF
+                doc.save(`receipt-${Date.now()}.pdf`);
+    
+                // Proses order hanya jika konfirmasi berhasil
+                await processOrder(user, cartItems, totalPrice, 'CASH');
+                
+                // Tampilkan pesan sukses
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Pembayaran Berhasil',
+                    text: 'Pesanan Anda sedang diproses',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+    
+                // Redirect ke halaman dashboard
+                window.location.href = '/User/Dashboard.html';
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'Terjadi kesalahan saat memproses pembayaran'
+                });
+            }
+        }
+        // Jika user membatalkan, tidak ada aksi yang dijalankan
+    }
+    
+    function generateReceiptHTML(cartItems, totalPrice, customerName) {
+        const date = new Date().toLocaleString('id-ID', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        const orderNotes = document.getElementById('orderNotes').value;
+        const orderId = Date.now().toString().slice(-6);
+        
+        return `
+            <div id="receipt-preview" class="bg-white p-8 max-w-[380px] mx-auto font-mono text-sm leading-tight">
+                <div class="text-center mb-6">
+                <img src="/img/logo.png" width="10px" height="auto" class="mx-auto mb-3 object-contain">
+                    <h2 class="text-xl font-bold mb-1">Nature Coffe</h2>
+                    <p class="mb-1">Jalan Pantura</p>
+                    <p class="mb-1">Telp: 12345678</p>
+                </div>
+                
+                <div class="border-t border-b border-black py-3 mb-4 text-left">
+                    <p class="mb-1">Tanggal: ${date}</p>
+                    <p class="mb-1">Customer: ${customerName}</p>
+                    <p class="mb-1">Order #${orderId}</p>
+                </div>
+    
+                <div class="mb-4">
+                    <div class="flex justify-between mb-2 font-bold">
+                        <span>Item</span>
+                        <span>Subtotal</span>
+                    </div>
+                    ${cartItems.map(item => `
+                        <div class="flex justify-between mb-2">
+                            <div class="flex-1">
+                                <p>${item.name}</p>
+                                <p class="text-gray-600">${item.quantity} x Rp ${new Intl.NumberFormat('id-ID').format(item.price)}</p>
+                            </div>
+                            <p class="ml-4">Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
+                        </div>
+                    `).join('')}
+                </div>
+    
+                <div class="border-t border-black pt-3 mb-4">
+                    <div class="flex justify-between font-bold text-lg">
+                        <p>Total</p>
+                        <p>Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
+                    </div>
+                </div>
+    
+                ${orderNotes ? `
+                    <div class="mb-4 border-t border-black pt-3">
+                        <p class="font-bold mb-1">Catatan:</p>
+                        <p class="whitespace-pre-wrap">${orderNotes}</p>
+                    </div>
+                ` : ''}
+    
+                <div class="text-center border-t border-black pt-3">
+                    <div class="mb-3">
+                        <p class="font-bold mb-1">WiFi Information</p>
+                        <p>SSID: NatureCoffe</p>
+                        <p>Pass: pantura2024</p>
+                    </div>
+                    <p class="font-bold">== Terima kasih ==</p>
+                    <p>Selamat menikmati!</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    async function processOrder(user, cartItems, totalPrice, paymentMethod, buktiPembayaran = null) {
+        const database = getDatabase();
+        const orderRef = ref(database, `customer-orders/${user.uid}/${Date.now()}`);
+        
+        // Compress images before saving to database
+        const processedItems = await Promise.all(cartItems.map(async item => {
+            const compressedImage = await compressImage(item.thumbnail);
+            return {
+                ...item,
+                thumbnail: compressedImage
             };
-
-            // Save to customer-orders
-            const database = getDatabase();
-            const orderRef = ref(database, `customer-orders/${user.uid}/${Date.now()}`);
+        }));
+    
+        // Create order data
+        const orderData = {
+            items: processedItems,
+            totalPrice: totalPrice,
+            paymentMethod: paymentMethod,
+            orderNotes: document.getElementById('orderNotes').value,
+            timestamp: Date.now(),
+            status: 'pending',
+            customerName: user.displayName,
+            customerEmail: user.email
+        };
+    
+        if (buktiPembayaran) {
+            const compressedBukti = await compressImage(buktiPembayaran);
+            orderData.buktiPembayaran = compressedBukti;
+        }
+    
+        try {
+            // Save order to database
             await set(orderRef, orderData);
-
-            // Clear cart after successful order
+            
+            // Clear cart
             const cartRef = ref(database, `customers/${user.uid}/cart`);
             await remove(cartRef);
-
-            // Show success message dengan animasi
-            await Swal.fire({
-                icon: 'success',
-                title: 'Pembayaran Berhasil!',
-                html: `
-                    <div class="text-center">
-                        <p class="mb-2">Terima kasih atas pesanan Anda</p>
-                        <p class="text-sm text-gray-600">Pesanan Anda sedang diproses</p>
-                    </div>
-                `,
-                timer: 2000,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                didOpen: () => {
-                    const b = Swal.getHtmlContainer().querySelector('p');
-                    b.style.animation = 'bounce 0.5s ease-in-out';
-                }
-            });
-
-            // Redirect to order history
-            window.location.href = '/User/Dashboard.html';
-        }
-    } catch (error) {
-        console.error('Error processing QRIS payment:', error);
-        await Swal.fire({
-            icon: 'error',
-            title: 'Gagal Memproses Pembayaran',
-            text: 'Silakan coba lagi: ' + error.message
-        });
-    }
-}
-// First, initialize jsPDF from the window object
-const { jsPDF } = window.jspdf;
-
-async function handleCashPayment(user, cartItems, totalPrice) {
-    const receiptHTML = generateReceiptHTML(cartItems, totalPrice, user.displayName);
     
-    await Swal.fire({
-        title: 'Nota Pembayaran',
-        html: receiptHTML,
-        confirmButtonText: 'Download Nota',
-        showCancelButton: true
-    });
-
-    try {
-        // Create new PDF document
-        const doc = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: [80, 200]
-        });
-
-        // Load and add logo
-        await new Promise((resolve, reject) => {
+            Swal.fire('Sukses', 'Pesanan berhasil diproses', 'success');
+        } catch (error) {
+            console.error('Error processing order:', error);
+            Swal.fire('Error', 'Gagal memproses pesanan', 'error');
+        }
+    }
+    
+    async function compressImage(imageData) {
+        return new Promise((resolve) => {
             const img = new Image();
             img.onload = () => {
-                try {
-                    // Calculate dimensions to maintain aspect ratio
-                    const imgWidth = 10;
-                    const imgHeight = (img.height * imgWidth) / img.width;
-                    
-                    // Add image to PDF, centered at the top
-                    doc.addImage(
-                        img, 
-                        'PNG', 
-                        (10 - imgWidth) / 2, // center horizontally
-                        5, // top margin
-                        imgWidth,
-                        imgHeight
-                    );
-                    resolve();
-                } catch (err) {
-                    console.error('Error adding image to PDF:', err);
-                    resolve(); // Continue without logo if there's an error
-                }
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set target width and maintain aspect ratio
+                const targetWidth = 300;
+                const scaleFactor = targetWidth / img.width;
+                canvas.width = targetWidth;
+                canvas.height = img.height * scaleFactor;
+                
+                // Draw and compress image
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
             };
-            img.onerror = () => {
-                console.error('Error loading logo');
-                resolve(); // Continue without logo if loading fails
-            };
-            img.src = '/img/logo.png';
+            img.src = imageData;
         });
-
-        // Set font
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-
-        // Header text (adjusted y-positions to accommodate logo)
-        doc.setFontSize(12);
-        doc.text('Nature Coffe', 40, 30, { align: 'center' });
-        doc.setFontSize(8);
-        doc.text('Jalan Pantura', 40, 35, { align: 'center' });
-        doc.text('Telp: 12345678', 40, 40, { align: 'center' });
-
-        // Garis pemisah
-        doc.line(5, 42, 75, 42);
-
-        // Informasi Order
-        const date = new Date().toLocaleString('id-ID');
-        doc.text(`Tanggal: ${date}`, 5, 47);
-        doc.text(`Customer: ${user.displayName}`, 5, 52);
-        doc.text(`Order #${Date.now().toString().slice(-6)}`, 5, 57);
-
-        // Garis pemisah
-        doc.line(5, 59, 75, 59);
-
-        // Items
-        let yPos = 64;
-        cartItems.forEach(item => {
-            doc.text(item.name, 5, yPos);
-            doc.text(`${item.quantity} x Rp ${new Intl.NumberFormat('id-ID').format(item.price)}`, 5, yPos + 4);
-            doc.text(`Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}`, 75, yPos + 4, { align: 'right' });
-            yPos += 10;
-        });
-
-        // Garis pemisah
-        doc.line(5, yPos, 75, yPos);
-        yPos += 5;
-
-        // Total
-        doc.setFontSize(10);
-        doc.text('Total:', 5, yPos);
-        doc.text(`Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}`, 75, yPos, { align: 'right' });
-        
-        // Catatan
-        const orderNotes = document.getElementById('orderNotes').value;
-        if (orderNotes) {
-            yPos += 10;
-            doc.setFontSize(8);
-            doc.text('Catatan:', 5, yPos);
-            const splitNotes = doc.splitTextToSize(orderNotes, 65);
-            splitNotes.forEach(line => {
-                yPos += 4;
-                doc.text(line, 5, yPos);
-            });
-        }
-
-        // Garis pemisah
-        yPos += 7;
-        doc.line(5, yPos, 75, yPos);
-
-        // WiFi Info
-        yPos += 5;
-        doc.text('WiFi: NatureCoffe', 40, yPos, { align: 'center' });
-        doc.text('Password: pantura2024', 40, yPos + 4, { align: 'center' });
-
-        // Footer
-        yPos += 10;
-        doc.text('== Terima kasih ==', 40, yPos, { align: 'center' });
-        doc.text('Selamat menikmati!', 40, yPos + 4, { align: 'center' });
-
-        // Download PDF
-        doc.save(`receipt-${Date.now()}.pdf`);
-
-        // Proses order
-        await processOrder(user, cartItems, totalPrice, 'CASH');
-        // Redirect to order history
-        window.location.href = '/User/Dashboard.html';
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        Swal.fire('Error', 'Gagal membuat nota pembayaran', 'error');
     }
-}
-
-function generateReceiptHTML(cartItems, totalPrice, customerName) {
-    const date = new Date().toLocaleString('id-ID', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-    const orderNotes = document.getElementById('orderNotes').value;
-    const orderId = Date.now().toString().slice(-6);
+    function initializeOrderMonitor() {
+        const database = getDatabase();
+        const ordersContainer = document.getElementById('history-user');
+        const auth = getAuth();
     
-    return `
-        <div id="receipt-preview" class="bg-white p-8 max-w-[380px] mx-auto font-mono text-sm leading-tight">
-            <div class="text-center mb-6">
-            <img src="/img/logo.png" width="10px" height="auto" class="mx-auto mb-3 object-contain">
-                <h2 class="text-xl font-bold mb-1">Nature Coffe</h2>
-                <p class="mb-1">Jalan Pantura</p>
-                <p class="mb-1">Telp: 12345678</p>
-            </div>
-            
-            <div class="border-t border-b border-black py-3 mb-4 text-left">
-                <p class="mb-1">Tanggal: ${date}</p>
-                <p class="mb-1">Customer: ${customerName}</p>
-                <p class="mb-1">Order #${orderId}</p>
-            </div>
-
-            <div class="mb-4">
-                <div class="flex justify-between mb-2 font-bold">
-                    <span>Item</span>
-                    <span>Subtotal</span>
-                </div>
-                ${cartItems.map(item => `
-                    <div class="flex justify-between mb-2">
-                        <div class="flex-1">
-                            <p>${item.name}</p>
-                            <p class="text-gray-600">${item.quantity} x Rp ${new Intl.NumberFormat('id-ID').format(item.price)}</p>
-                        </div>
-                        <p class="ml-4">Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
-                    </div>
-                `).join('')}
-            </div>
-
-            <div class="border-t border-black pt-3 mb-4">
-                <div class="flex justify-between font-bold text-lg">
-                    <p>Total</p>
-                    <p>Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
-                </div>
-            </div>
-
-            ${orderNotes ? `
-                <div class="mb-4 border-t border-black pt-3">
-                    <p class="font-bold mb-1">Catatan:</p>
-                    <p class="whitespace-pre-wrap">${orderNotes}</p>
-                </div>
-            ` : ''}
-
-            <div class="text-center border-t border-black pt-3">
-                <div class="mb-3">
-                    <p class="font-bold mb-1">WiFi Information</p>
-                    <p>SSID: NatureCoffe</p>
-                    <p>Pass: pantura2024</p>
-                </div>
-                <p class="font-bold">== Terima kasih ==</p>
-                <p>Selamat menikmati!</p>
-            </div>
-        </div>
-    `;
-}
-
-async function processOrder(user, cartItems, totalPrice, paymentMethod, buktiPembayaran = null) {
-    const database = getDatabase();
-    const orderRef = ref(database, `customer-orders/${user.uid}/${Date.now()}`);
+        // Listen for auth state changes
+        onAuthStateChanged(auth, (user) => {
+            if (!user) return;
     
-    // Compress images before saving to database
-    const processedItems = await Promise.all(cartItems.map(async item => {
-        const compressedImage = await compressImage(item.thumbnail);
-        return {
-            ...item,
-            thumbnail: compressedImage
-        };
-    }));
-
-    // Create order data
-    const orderData = {
-        items: processedItems,
-        totalPrice: totalPrice,
-        paymentMethod: paymentMethod,
-        orderNotes: document.getElementById('orderNotes').value,
-        timestamp: Date.now(),
-        status: 'pending',
-        customerName: user.displayName,
-        customerEmail: user.email
-    };
-
-    if (buktiPembayaran) {
-        const compressedBukti = await compressImage(buktiPembayaran);
-        orderData.buktiPembayaran = compressedBukti;
-    }
-
-    try {
-        // Save order to database
-        await set(orderRef, orderData);
-        
-        // Clear cart
-        const cartRef = ref(database, `customers/${user.uid}/cart`);
-        await remove(cartRef);
-
-        Swal.fire('Sukses', 'Pesanan berhasil diproses', 'success');
-    } catch (error) {
-        console.error('Error processing order:', error);
-        Swal.fire('Error', 'Gagal memproses pesanan', 'error');
-    }
-}
-
-async function compressImage(imageData) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+            const ordersRef = ref(database, 'customer-orders');
             
-            // Set target width and maintain aspect ratio
-            const targetWidth = 300;
-            const scaleFactor = targetWidth / img.width;
-            canvas.width = targetWidth;
-            canvas.height = img.height * scaleFactor;
-            
-            // Draw and compress image
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            resolve(canvas.toDataURL('image/jpeg', 0.7));
-        };
-        img.src = imageData;
-    });
-}
-function initializeOrderMonitor() {
-    const database = getDatabase();
-    const ordersContainer = document.getElementById('history-user');
-    const auth = getAuth();
-
-    // Listen for auth state changes
-    onAuthStateChanged(auth, (user) => {
-        if (!user) return;
-
-        const ordersRef = ref(database, 'customer-orders');
-        
-        // Set up real-time listener
-        onValue(ordersRef, (snapshot) => {
-            const allOrders = snapshot.val();
-            if (!allOrders) {
-                ordersContainer.innerHTML = '<p class="text-center p-4">No orders found.</p>';
-                return;
-            }
-
-            let tableHTML = `
-                <table class="min-w-full border-collapse">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="border p-2">Order Time</th>
-                            <th class="border p-2">Customer</th>
-                            <th class="border p-2">Items</th>
-                            <th class="border p-2">Notes</th>
-                            <th class="border p-2">Total</th>
-                            <th class="border p-2">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            // Process all orders
-            const orders = [];
-            Object.entries(allOrders).forEach(([userId, userOrders]) => {
-                Object.entries(userOrders).forEach(([orderId, orderData]) => {
-                    orders.push({
-                        orderId,
-                        timestamp: parseInt(orderId),
-                        ...orderData
-                    });
-                });
-            });
-
-            // Sort orders by timestamp (newest first)
-            orders.sort((a, b) => b.timestamp - a.timestamp);
-
-            // Generate table rows
-            orders.forEach(order => {
-                const orderTime = new Date(order.timestamp).toLocaleString('id-ID', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-
-                let itemsList = '';
-                let totalPrice = 0;
-
-                // Process items
-                if (order.items) {
-                    Object.values(order.items).forEach(item => {
-                        itemsList += `${item.name} (${item.quantity}x Rp ${new Intl.NumberFormat('id-ID').format(item.price)})<br>`;
-                        totalPrice += (item.price * (item.quantity || 1));
-                    });
+            // Set up real-time listener
+            onValue(ordersRef, (snapshot) => {
+                const allOrders = snapshot.val();
+                if (!allOrders) {
+                    ordersContainer.innerHTML = '<p class="text-center p-4">No orders found.</p>';
+                    return;
                 }
-
-                // Add status color classes
-                let statusClass = '';
-                switch (order.status?.toLowerCase()) {
-                    case 'completed':
-                        statusClass = 'bg-green-100 text-green-800';
-                        break;
-                    case 'pending':
-                        statusClass = 'bg-yellow-100 text-yellow-800';
-                        break;
-                    case 'cancelled':
-                        statusClass = 'bg-red-100 text-red-800';
-                        break;
-                    default:
-                        statusClass = 'bg-gray-100 text-gray-800';
-                }
-
-                tableHTML += `
-                    <tr class="hover:bg-gray-50">
-                        <td class="border p-2">${orderTime}</td>
-                        <td class="border p-2">
-                            <div class="font-medium">${order.customerName || 'N/A'}</div>
-                            <div class="text-sm text-gray-600">${order.customerEmail || ''}</div>
-                        </td>
-                        <td class="border p-2">${itemsList}</td>
-                        <td class="border p-2">${order.orderNotes || '-'}</td>
-                        <td class="border p-2">Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</td>
-                        <td class="border p-2">
-                            <span class="px-2 py-1 rounded-full text-sm ${statusClass} capitalize">
-                                ${order.status || 'pending'}
-                            </span>
-                        </td>
-                    </tr>
+    
+                let tableHTML = `
+                    <table class="min-w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border p-2">Order Time</th>
+                                <th class="border p-2">Customer</th>
+                                <th class="border p-2">Items</th>
+                                <th class="border p-2">Notes</th>
+                                <th class="border p-2">Total</th>
+                                <th class="border p-2">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                 `;
+    
+                // Process all orders
+                const orders = [];
+                Object.entries(allOrders).forEach(([userId, userOrders]) => {
+                    Object.entries(userOrders).forEach(([orderId, orderData]) => {
+                        orders.push({
+                            orderId,
+                            timestamp: parseInt(orderId),
+                            ...orderData
+                        });
+                    });
+                });
+    
+                // Sort orders by timestamp (newest first)
+                orders.sort((a, b) => b.timestamp - a.timestamp);
+    
+                // Generate table rows
+                orders.forEach(order => {
+                    const orderTime = new Date(order.timestamp).toLocaleString('id-ID', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+    
+                    let itemsList = '';
+                    let totalPrice = 0;
+    
+                    // Process items
+                    if (order.items) {
+                        Object.values(order.items).forEach(item => {
+                            itemsList += `${item.name} (${item.quantity}x Rp ${new Intl.NumberFormat('id-ID').format(item.price)})<br>`;
+                            totalPrice += (item.price * (item.quantity || 1));
+                        });
+                    }
+    
+                    // Add status color classes
+                    let statusClass = '';
+                    switch (order.status?.toLowerCase()) {
+                        case 'completed':
+                            statusClass = 'bg-green-100 text-green-800';
+                            break;
+                        case 'pending':
+                            statusClass = 'bg-yellow-100 text-yellow-800';
+                            break;
+                        case 'cancelled':
+                            statusClass = 'bg-red-100 text-red-800';
+                            break;
+                        default:
+                            statusClass = 'bg-gray-100 text-gray-800';
+                    }
+    
+                    tableHTML += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="border p-2">${orderTime}</td>
+                            <td class="border p-2">
+                                <div class="font-medium">${order.customerName || 'N/A'}</div>
+                                <div class="text-sm text-gray-600">${order.customerEmail || ''}</div>
+                            </td>
+                            <td class="border p-2">${itemsList}</td>
+                            <td class="border p-2">${order.orderNotes || '-'}</td>
+                            <td class="border p-2">Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</td>
+                            <td class="border p-2">
+                                <span class="px-2 py-1 rounded-full text-sm ${statusClass} capitalize">
+                                    ${order.status || 'pending'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+    
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+    
+                ordersContainer.innerHTML = tableHTML;
             });
-
-            tableHTML += `
-                    </tbody>
-                </table>
-            `;
-
-            ordersContainer.innerHTML = tableHTML;
         });
-    });
-}
+    }
 
-// Initialize the monitor when the page loads
-document.addEventListener('DOMContentLoaded', initializeOrderMonitor);
-});
+    // Initialize the monitor when the page loads
+    document.addEventListener('DOMContentLoaded', initializeOrderMonitor);
+    });
+});    
+

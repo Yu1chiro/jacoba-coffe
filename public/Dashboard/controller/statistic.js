@@ -107,6 +107,8 @@ getFirebaseConfig().then(firebaseConfig => {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,  // Mengatur rasio lebar:tinggi menjadi 2:1
                 plugins: {
                     title: {
                         display: true,
@@ -116,7 +118,7 @@ getFirebaseConfig().then(firebaseConfig => {
             }
         });
     }
-
+    
     function renderDailyRevenueBarChart(dailyRevenue) {
         const ctx = document.getElementById('dailyRevenueBarChart').getContext('2d');
         new Chart(ctx, {
@@ -133,6 +135,8 @@ getFirebaseConfig().then(firebaseConfig => {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,  // Mengatur rasio lebar:tinggi menjadi 2:1
                 scales: {
                     y: {
                         beginAtZero: true,

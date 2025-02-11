@@ -196,6 +196,7 @@ getFirebaseConfig().then(firebaseConfig => {
                 let totalPrice = 0;
                 let customerName = '';
                 let tableNumber = '';
+                let orderNotes = orderData.orderNotes || '-'; 
                 
                 // Fetch customer info from the first item
                 if (orderData.items) {
@@ -239,6 +240,7 @@ getFirebaseConfig().then(firebaseConfig => {
                             <div class="font-semibold mb-2">Informasi Pelanggan:</div>
                             <div>Nama: ${customerName}</div>
                             <div>Nomor Meja: ${tableNumber}</div>
+                            <div>Notes: ${orderNotes}</div>
                             <div>Metode Pembayaran: ${orderData.paymentMethod || '-'}</div>
                         </div>
                         <div class="space-y-2">
@@ -274,7 +276,7 @@ getFirebaseConfig().then(firebaseConfig => {
             title: 'Bukti Pembayaran QRIS',
             html: `
                 <div class="flex justify-center">
-                    <img src="${paymentProofBase64}" alt="Bukti Pembayaran" class="w-32 h-auto">
+                    <img src="${paymentProofBase64}" alt="Bukti Pembayaran" class="w-[400px] h-[400px]">
                 </div>
             `,
             width: 600,

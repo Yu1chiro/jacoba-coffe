@@ -372,25 +372,25 @@ function getUniqueVariants(products) {
     return Array.from(variants);
   }
   
-  // Modifikasi fungsi loadbasicProducts
-  function loadbasicProducts() {
-    const basicRef = ref(database, 'basic-product');
-    const basicContainer = document.getElementById("basic-card");
-    const filterContainer = document.getElementById("filter-container");
+  // Modifikasi fungsi loadweekProducts
+  function loadweekProducts() {
+    const weekRef = ref(database, 'week-product');
+    const weekContainer = document.getElementById("week-card");
+    const weeksContainer = document.getElementById("week-container");
   
     try {
-      const cachedData = sessionStorage.getItem("basicProducts");
+      const cachedData = sessionStorage.getItem("weekProducts");
       if (cachedData && cachedData.length < 5000000) {
         const products = JSON.parse(cachedData);
-        setupFilters(products);
-        renderbasicProducts(products);
+        setupweeks(products);
+        renderweekProducts(products);
       }
     } catch (error) {
       console.warn("Cache tidak dapat digunakan:", error);
-      sessionStorage.removeItem("basicProducts");
+      sessionStorage.removeItem("weekProducts");
     }
   
-    onValue(basicRef, (snapshot) => {
+    onValue(weekRef, (snapshot) => {
       if (snapshot.exists()) {
         const products = [];
         snapshot.forEach((childSnapshot) => {
@@ -402,36 +402,36 @@ function getUniqueVariants(products) {
         try {
           const jsonData = JSON.stringify(products);
           if (jsonData.length < 5000000) {
-            sessionStorage.setItem("basicProducts", jsonData);
+            sessionStorage.setItem("weekProducts", jsonData);
           }
         } catch (error) {
           console.warn("Gagal menyimpan cache:", error);
         }
   
-        setupFilters(products);
-        renderbasicProducts(products);
+        setupweeks(products);
+        renderweekProducts(products);
       } else {
-        basicContainer.innerHTML = "<p class='text-gray-500'>Tidak ada produk basic.</p>";
+        weekContainer.innerHTML = "<p class='text-gray-500'>Tidak ada produk week.</p>";
       }
     });
   }
   
-  // Fungsi untuk setup filter
-  function setupFilters(products) {
+  // Fungsi untuk setup week
+  function setupweeks(products) {
     const variants = getUniqueVariants(products);
-    const filterContainer = document.getElementById("filter-container");
+    const weekContainer = document.getElementById("week-container");
     
-    // Render filter buttons
-    filterContainer.innerHTML = `
+    // Render week buttons
+    weekContainer.innerHTML = `
       <div class="mb-6">
-        <h3 class="text-lg font-semibold text-[#cbac85] mb-3">Filter berdasarkan Varian:</h3>
+        <h3 class="text-lg font-semibold text-[#cbac85] mb-3">week berdasarkan Varian:</h3>
         <div class="flex flex-wrap gap-2">
-          <button class="filter-btn active px-4 py-2 rounded-lg bg-[#3e1e04] text-white font-semibold transition-all"
+          <button class="week-btn active px-4 py-2 rounded-lg bg-[#3e1e04] text-white font-semibold transition-all"
                   data-variant="all">
             All
           </button>
           ${variants.map(variant => `
-            <button class="filter-btn px-4 py-2 rounded-lg bg-[#3e1e04] text-white font-semibold hover:bg-yellow-900 transition-all"
+            <button class="week-btn px-4 py-2 rounded-lg bg-[#3e1e04] text-white font-semibold hover:bg-yellow-900 transition-all"
                     data-variant="${variant}">
               ${variant}
             </button>
@@ -440,35 +440,35 @@ function getUniqueVariants(products) {
       </div>
     `;
   
-    // Setup event listeners untuk filter
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(button => {
+    // Setup event listeners untuk week
+    const weekButtons = document.querySelectorAll('.week-btn');
+    weekButtons.forEach(button => {
       button.addEventListener('click', () => {
         // Remove active class from all buttons
-        filterButtons.forEach(btn => btn.classList.remove('active', 'bg-yellow-700'));
+        weekButtons.forEach(btn => btn.classList.remove('active', 'bg-yellow-700'));
         // Add active class to clicked button
         button.classList.add('active', 'bg-yellow-700');
         
         const selectedVariant = button.dataset.variant;
-        filterProducts(products, selectedVariant);
+        weekProducts(products, selectedVariant);
       });
     });
   }
   
-  // Fungsi untuk filter produk
-  function filterProducts(products, variant) {
-    const filteredProducts = variant === 'all' 
+  // Fungsi untuk week produk
+  function weekProducts(products, variant) {
+    const weekedProducts = variant === 'all' 
       ? products 
-      : products.filter(product => product.variant === variant);
+      : products.week(product => product.variant === variant);
     
-    renderbasicProducts(filteredProducts);
+    renderweekProducts(weekedProducts);
   }
   
   // Modifikasi container HTML untuk grid layout
-  function renderbasicProducts(products) {
-    const basicContainer = document.getElementById("basic-card");
-    basicContainer.className = "grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 gap-6 p-6";
-    basicContainer.innerHTML = products.length ? "" : "<p class='text-gray-500 col-span-full text-center'>Tidak ada produk yang sesuai dengan filter.</p>";
+  function renderweekProducts(products) {
+    const weekContainer = document.getElementById("week-card");
+    weekContainer.className = "grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 gap-6 p-6";
+    weekContainer.innerHTML = products.length ? "" : "<p class='text-gray-500 col-span-full text-center'>Tidak ada produk yang sesuai dengan week.</p>";
   
     products.forEach((product) => {
       const formattedPrice = new Intl.NumberFormat('id-ID').format(product.price);
@@ -483,7 +483,7 @@ function getUniqueVariants(products) {
         <div class="p-5">
           <h5 class="mb-2 text-2xl font-bold tracking-wide">${product.name}</h5>
           <p class="mb-3 font-medium text-lg">Rp. ${formattedPrice}</p>
-          <button class="order-button inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-700 rounded-lg hover:bg-yellow-900 transition duration-300">
+          <button class="weekorder-button inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-700 rounded-lg hover:bg-yellow-900 transition duration-300">
             <svg class="me-2" xmlns="http://www.w3.org/2000/svg" fill="white" height="20px" width="20px" viewBox="0 0 24 24">
               <g id="shop-cart">
                 <circle cx="9" cy="21" r="2"/>
@@ -497,7 +497,7 @@ function getUniqueVariants(products) {
       </div>
     `;
 
-    basicContainer.innerHTML += productCard;
+    weekContainer.innerHTML += productCard;
     });
   
     setupOrderButtons();
@@ -509,7 +509,7 @@ function getUniqueVariants(products) {
 
   // Setup order buttons dengan flow yang baru
   function setupOrderButtons() {
-    const orderButtons = document.querySelectorAll('.order-button');
+    const orderButtons = document.querySelectorAll('.weekorder-button');
     orderButtons.forEach(button => {
       button.addEventListener('click', async () => {
         try {
@@ -562,5 +562,5 @@ function getUniqueVariants(products) {
   });
 
   // Panggil fungsi saat halaman dimuat
-  loadbasicProducts();
+  loadweekProducts();
 });

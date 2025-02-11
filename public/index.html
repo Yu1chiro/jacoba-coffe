@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jacoba Cafe</title>
+  <title>Jacoba Coffee</title>
   <link rel="shortcut icon" href="/img/logo.png" type="image/x-icon">
   <!-- google fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="style.css">
   <script defer type="module" src="/Mainservices/fetch1.js"></script>
   <script defer type="module" src="/Mainservices/basic.js"></script>
+  <script defer type="module" src="/Mainservices/week.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css"  rel="stylesheet" />
   <script async src="https://cdn.jsdelivr.net/npm/sweetalert2"></script>
   <style>
@@ -25,7 +26,7 @@
     <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
       <a href="" class="flex items-center space-x-3 rtl:space-x-reverse">
           <img src="/img/logo.png" class="h-8 lazy" alt="Flowbite Logo" />
-          <span class="self-center text-lg font-normal whitespace-nowrap text-[#cbac85] font-semibold">Jacoba Cafe</span>
+          <span class="self-center text-lg font-normal whitespace-nowrap text-[#cbac85] font-semibold">Jacoba Coffee</span>
       </a>
       <button data-collapse-toggle="navbar-default" type="button" class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-[#cbac85] rounded-lg md:hidden  focus:outline-none focus:ring-2 " aria-controls="navbar-default" aria-expanded="false">
          <img src="/img/bar.webp" class="shadow-lg lazy" width="50px" height="auto" alt="">
@@ -65,24 +66,24 @@
   </nav>
   
  <!-- Hero Section -->
- <section class="relative text-[#cbac85] h-screen flex items-center justify-center bg-center bg-no-repeat bg-[url('/img/IMG_6556.jpg')] bg-gray-700 bg-blend-multiply">
+ <section class="relative text-[#cbac85] h-screen flex items-center justify-center bg-center bg-no-repeat bg-[url('/img/space.png')] bg-gray-700 bg-blend-multiply">
   <div class="relative z-10 container mx-auto px-4 sm:px-6">
     <div class="flex flex-col md:flex-row-reverse items-center h-full gap-8">
       <!-- Gambar (Hanya muncul di desktop) -->
       <div class="md:block w-[280px]  md:w-1/2 px-4">
-        <img src="/img/coffe.png" alt="Cafe Image" class="w-full h-auto rounded-lg shadow-lg object-cover">
+        <img src="/img/coffe.png" alt="Coffee Image" class="w-full h-auto rounded-lg shadow-lg object-cover">
       </div>
       <!-- Teks -->
       <div class="w-full md:w-1/2 text-center md:text-left space-y-6 px-4">
         <h1 class="text-2xl xl:text-4xl font-bold dmserif sm:text-3xl leading-tight tracking-wide">
-         Jacoba Cafe
+         Jacoba Coffee
         </h1>
         <p class="text-base poppins sm:text-lg md:text-xl leading-relaxed">
-          Cari tempat nyaman buat nugas atau nongkrong bareng teman? Jacoba Cafe adalah pilihan tepat! Dengan suasana cozy, dan aneka minuman serta camilan lezat, dijamin bikin kamu betah berlama-lama.
+          Cari tempat nyaman buat nugas atau nongkrong bareng teman? Jacoba Coffee adalah pilihan tepat! Dengan suasana cozy, dan aneka minuman serta camilan lezat, dijamin bikin kamu betah berlama-lama.
         </p>
         <div class="mt-8">
-          <a href="#jacoba-coffe" class="hidden xl:inline-block lg:inline-block bg-[#965015] text-white px-6 py-3 rounded hover:bg-[#6a3005] transition-colors duration-300">
-            View
+          <a href="#jacoba-coffe" class="hidden xl:inline-block font-bold lg:inline-block bg-[#965015] text-white px-6 py-3 rounded hover:bg-[#6a3005] transition-colors duration-300">
+            Jacoba Menu
           </a>
         </div>
       </div>
@@ -93,7 +94,7 @@
 <!-- About simple -->
 <section class="bg-fixed h-screen bg-center bg-no-repeat bg-cover bg-[url('/img/coffe.png')] bg-gray-700 bg-blend-multiply flex items-center justify-center">
   <div class="max-w-3xl px-6 text-center text-[#cbac85]">
-    <h2 class="text-3xl md:text-5xl font-bold dmserif tracking-wide mb-4">Jacoba Cafe</h2>
+    <h2 class="text-3xl md:text-5xl font-bold dmserif tracking-wide mb-4">Jacoba Coffee</h2>
     <p class="text-lg md:text-xl font-light leading-relaxed mt-4">
       Kami menyajikan berbagai pilihan kopi berkualitas, teh artisan, serta hidangan ringan yang dibuat dengan bahan-bahan pilihan. Setiap cangkir kopi yang kami sajikan dibuat dengan penuh perhatian, menghadirkan keseimbangan rasa yang sempurna.
     </p>
@@ -101,8 +102,8 @@
 </section>
 
 
-  <!-- Why Jacoba Cafe Section -->
-  <!-- Why Jacoba Cafe Section -->
+  <!-- Why Jacoba Coffee Section -->
+  <!-- Why Jacoba Coffee Section -->
 <section id="services" class="py-16 text-[#3e1e04] h-auto">
   <div class="container mx-auto px-6 text-center">
     <h2 class="text-2xl text-[#cbac85] xl:text-4xl lg:text-4xl font-normal mb-8 font-semibold">Jacoba Services</h2>
@@ -144,7 +145,24 @@
       <h2 class="text-2xl text-[#6a3005] md:text-4xl font-semibold mb-8 font-serif">
         Jacoba Menu
       </h2>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Container untuk filter -->
+        <div id="filter-container" class="mb-8"></div>
       <div id="basic-card" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Javascript only -->
+      </div>
+    </div>
+  </section>
+  <!-- List Menu Section -->
+  <section class="py-16 bg-[#cbac85] text-[#3e1e04]">
+    <div class="container mx-auto px-6 text-center">
+      <h2 class="text-2xl text-[#6a3005] md:text-4xl font-semibold mb-8 font-serif">
+        Weekend Special
+      </h2>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Container untuk week -->
+        <div id="week-container" class="mb-8"></div>
+      <div id="week-card" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Javascript only -->
       </div>
     </div>

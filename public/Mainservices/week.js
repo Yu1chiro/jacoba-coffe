@@ -411,7 +411,7 @@ function getUniqueVariants(products) {
         setupweeks(products);
         renderweekProducts(products);
       } else {
-        weekContainer.innerHTML = "<p class='text-gray-500'>Tidak ada produk week.</p>";
+        weekContainer.innerHTML = "<p class='text-gray-800 text-center'>Tidak ada produk week.</p>";
       }
     });
   }

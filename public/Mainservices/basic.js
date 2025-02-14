@@ -465,14 +465,22 @@ function getUniqueVariants(products) {
   }
   
   // Modifikasi container HTML untuk grid layout
-  function renderbasicProducts(products) {
-    const basicContainer = document.getElementById("basic-card");
-    basicContainer.className = "grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 gap-6 p-6";
-    basicContainer.innerHTML = products.length ? "" : "<p class='text-gray-500 col-span-full text-center'>Tidak ada produk yang sesuai dengan filter.</p>";
+  // Tambahkan variabel untuk melacak jumlah produk yang ditampilkan
+let currentDisplayCount = 3;
+
+function renderbasicProducts(products) {
+  const basicContainer = document.getElementById("basic-card");
+  basicContainer.className = "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 p-6";
   
-    products.forEach((product) => {
-      const formattedPrice = new Intl.NumberFormat('id-ID').format(product.price);
-      const productCard = `
+  // Kosongkan container setiap kali render
+  basicContainer.innerHTML = products.length ? "" : "<p class='text-gray-500 col-span-full text-center'>Tidak ada produk yang sesuai dengan filter.</p>";
+
+  // Slice array produk sesuai dengan jumlah yang ingin ditampilkan
+  const productsToShow = products.slice(0, currentDisplayCount);
+
+  productsToShow.forEach((product) => {
+    const formattedPrice = new Intl.NumberFormat('id-ID').format(product.price);
+    const productCard = `
       <div class="relative max-w-sm text-[#cbac85] bg-[#3e1e04] border border-gray-200 rounded-lg shadow-sm" data-product-id="${product.id}">
         <div class="relative">
           <img class="rounded-t-lg w-full h-48 object-cover" src="${product.thumbnail}" alt="${product.name}" />
@@ -498,11 +506,47 @@ function getUniqueVariants(products) {
     `;
 
     basicContainer.innerHTML += productCard;
-    });
-  
-    setupOrderButtons();
+  });
+
+  // Tambahkan tombol "Load More" jika masih ada produk yang belum ditampilkan
+  if (currentDisplayCount < products.length) {
+    const loadMoreButton = document.createElement('button');
+    loadMoreButton.className = 'col-span-full mx-auto mt-6 px-6 py-3 bg-yellow-700 text-white rounded-lg hover:bg-yellow-900 transition-all font-medium';
+    loadMoreButton.textContent = 'Lebih Banyak';
+    loadMoreButton.onclick = () => {
+      currentDisplayCount += 6; // Tambah 4 produk setiap klik
+      renderbasicProducts(products); // Render ulang dengan jumlah yang baru
+    };
+    basicContainer.appendChild(loadMoreButton);
   }
+
+  setupOrderButtons();
+}
+
+// Modifikasi fungsi loadbasicProducts
+function loadbasicProducts() {
+  const basicRef = ref(database, 'basic-product');
+  const basicContainer = document.getElementById("basic-card");
   
+  // Reset currentDisplayCount setiap kali load products baru
+  currentDisplayCount = 6;
+
+  onValue(basicRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const products = [];
+      snapshot.forEach((childSnapshot) => {
+        const product = childSnapshot.val();
+        product.id = childSnapshot.key;
+        products.push(product);
+      });
+
+      setupFilters(products);
+      renderbasicProducts(products);
+    } else {
+      basicContainer.innerHTML = "<p class='text-gray-500'>Tidak ada produk basic.</p>";
+    }
+  });
+}
   // Fungsi untuk merender produk
  
   

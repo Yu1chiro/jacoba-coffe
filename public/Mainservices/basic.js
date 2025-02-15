@@ -470,7 +470,7 @@ let currentDisplayCount = 3;
 
 function renderbasicProducts(products) {
   const basicContainer = document.getElementById("basic-card");
-  basicContainer.className = "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 p-6";
+  basicContainer.className = "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2 lg:gap-6";
   
   // Kosongkan container setiap kali render
   basicContainer.innerHTML = products.length ? "" : "<p class='text-gray-500 col-span-full text-center'>Tidak ada produk yang sesuai dengan filter.</p>";
@@ -489,8 +489,8 @@ function renderbasicProducts(products) {
           </span>
         </div>
         <div class="p-5">
-          <h5 class="mb-2 text-2xl font-bold tracking-wide">${product.name}</h5>
-          <p class="mb-3 font-medium text-lg">Rp. ${formattedPrice}</p>
+          <h5 class="mb-2 text-sm lg:text-xl font-bold tracking-wide">${product.name}</h5>
+          <p class="mb-3 font-medium text-sm lg:text-lg">Rp. ${formattedPrice}</p>
           <button class="order-button inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-700 rounded-lg hover:bg-yellow-900 transition duration-300">
             <svg class="me-2" xmlns="http://www.w3.org/2000/svg" fill="white" height="20px" width="20px" viewBox="0 0 24 24">
               <g id="shop-cart">

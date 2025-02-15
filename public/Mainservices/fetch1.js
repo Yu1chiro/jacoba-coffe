@@ -421,8 +421,8 @@ async function updateProductQuantity(userId, productId, change) {
             </span>
           </div>
           <div class="p-5">
-            <h5 class="mb-2 text-2xl font-bold tracking-wide">${product.name}</h5>
-            <p class="mb-3 font-medium text-lg">Rp. ${formattedPrice}</p>
+            <h5 class="mb-2 text-sm lg:text-xl font-bold tracking-wide">${product.name}</h5>
+            <p class="mb-3 font-medium text-sm lg:text-lg">Rp. ${formattedPrice}</p>
             <button class="order-button inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#3e1e04] rounded-lg hover:bg-[#2d1503] transition duration-300">
               <svg class="me-2" xmlns="http://www.w3.org/2000/svg" fill="white" height="20px" width="20px" viewBox="0 0 24 24">
                 <g id="shop-cart">

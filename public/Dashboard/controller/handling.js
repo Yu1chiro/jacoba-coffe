@@ -1,5 +1,6 @@
+  
 
-    document.getElementById('add-bestseller').addEventListener('click', function() {
+document.getElementById('add-bestseller').addEventListener('click', function() {
         Swal.fire({
             title: 'Tambah Produk Bestseller',
             html: `

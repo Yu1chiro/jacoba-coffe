@@ -108,7 +108,7 @@ getFirebaseConfig().then(firebaseConfig => {
       });
       
       // Arahkan ke halaman login
-      window.location.href = '/Auth/sign.html';
+      window.location.href = '/sign';
       
     } catch (error) {
       // Tampilkan pesan error
@@ -121,3 +121,4 @@ getFirebaseConfig().then(firebaseConfig => {
     }
   });
 });
+

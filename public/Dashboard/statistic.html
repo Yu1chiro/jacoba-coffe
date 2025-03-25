@@ -14,12 +14,7 @@
     <script defer type="module" src="/Dashboard/controller/statistic.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        #hide-element {
-            display: none;
-        }
-        #content {
-            display: none;
-        }
+       
         @import url('https://fonts.googleapis.com/css?family=Karla:400,700&display=swap');
         .font-family-karla { font-family: karla; }
         .bg-sidebar { background: #3e1e04; }
@@ -41,11 +36,11 @@
             </button>
         </div>
         <nav class="text-white text-base font-semibold pt-3">
-            <a href="/Dashboard/admin.html" class="flex items-center  text-white py-4 pl-6 nav-item">
+            <a href="/admin" class="flex items-center  text-white py-4 pl-6 nav-item">
                 <i class="fa-solid fa-house mr-3"></i>
                 Dashboard
             </a>
-            <a href="/Dashboard/statistic.html" class="flex items-center active-nav-link text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+            <a href="/statistic" class="flex items-center active-nav-link text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
                 <i class="fa-solid fa-chart-simple mr-3"></i>
                 Statistic
             </a>
@@ -71,7 +66,7 @@
         <!-- Mobile Header & Nav -->
         <header x-data="{ isOpen: false }" class="w-full bg-sidebar py-5 px-6 sm:hidden">
             <div class="flex items-center justify-between">
-                <a href="/Dashboard/admin.html" class="text-white text-3xl font-semibold uppercase hover:text-gray-300">DASHBOARD</a>
+                <a href="/admin" class="text-white text-3xl font-semibold uppercase hover:text-gray-300">DASHBOARD</a>
                 <button @click="isOpen = !isOpen" class="text-white text-3xl focus:outline-none">
                     <i x-show="!isOpen" class="fas fa-bars"></i>
                     <i x-show="isOpen" class="fas fa-times"></i>
@@ -80,11 +75,11 @@
 
             <!-- Dropdown Nav -->
             <nav :class="isOpen ? 'flex': 'hidden'" class="flex flex-col pt-4">
-                <a href="/Dashboard/admin.html" class="flex items-center text-white py-4 pl-6 nav-item">
+                <a href="/admin" class="flex items-center text-white py-4 pl-6 nav-item">
                     <i class="fa-solid fa-chart-simple mr-3"></i>
                     Dashboard
                  </a>
-                 <a href="/Dashboard/statistic.html" class="flex items-center active-nav-link text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+                 <a href="/statistic" class="flex items-center active-nav-link text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
                     <i class="fa-solid fa-chart-simple mr-3"></i>
                     Statistik
                  </a>

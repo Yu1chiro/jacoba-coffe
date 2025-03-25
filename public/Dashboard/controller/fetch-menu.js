@@ -187,31 +187,21 @@ getFirebaseConfig().then(firebaseConfig => {
 
     function showOrderDetails(userId, orderId) {
         const orderRef = ref(database, `customer-orders/${userId}/${orderId}`);
-        
+    
         get(orderRef).then(snapshot => {
             const orderData = snapshot.val();
             
             if (orderData) {
                 let itemsHTML = '';
-                let totalPrice = 0;
-                let customerName = '';
-                let tableNumber = '';
-                let orderNotes = orderData.orderNotes || '-'; 
+                let totalPrice = orderData.totalPrice || 0;
+                let customerName = orderData.customerName || '';
+                let tableNumber = orderData.tableNumber || '';
+               // Perbaikan disini - cek kedua field notes dan orderNotes
+            let orderNotes = orderData.notes || orderData.orderNotes || '-';
                 
-                // Fetch customer info from the first item
-                if (orderData.items) {
-                    const firstItemKey = Object.keys(orderData.items)[0];
-                    const firstItem = orderData.items[firstItemKey];
-                    if (firstItem && firstItem.customerInfo) {
-                        customerName = firstItem.customerInfo.name || '';
-                        tableNumber = firstItem.customerInfo.tableNumber || '';
-                    }
-                }
-    
                 // Process items and calculate total
                 Object.values(orderData.items || {}).forEach(item => {
                     const itemTotal = item.price * (item.quantity || 1);
-                    totalPrice += itemTotal;
                     itemsHTML += `
                         <div class="flex items-center space-x-4">
                             <img src="${item.thumbnail || 'fallback-image.jpg'}" alt="${item.name}" class="w-16 h-16 rounded">
@@ -226,7 +216,7 @@ getFirebaseConfig().then(firebaseConfig => {
     
                 // Tambahkan tombol lihat bukti pembayaran jika metode pembayaran QRIS
                 const paymentProofButton = orderData.paymentMethod === 'QRIS' ? `
-                    <button onclick="showPaymentProof('${orderData.paymentProof}')" 
+                    <button onclick="showPaymentProof('${orderData.paymentProof || ''}')" 
                         class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mt-4">
                         Lihat Bukti Pembayaran
                     </button>
@@ -240,8 +230,9 @@ getFirebaseConfig().then(firebaseConfig => {
                             <div class="font-semibold mb-2">Informasi Pelanggan:</div>
                             <div>Nama: ${customerName}</div>
                             <div>Nomor Meja: ${tableNumber}</div>
-                            <div>Notes: ${orderNotes}</div>
+                            <div>Catatan: ${orderNotes}</div>
                             <div>Metode Pembayaran: ${orderData.paymentMethod || '-'}</div>
+                            <div>Status: ${orderData.status || '-'}</div>
                         </div>
                         <div class="space-y-2">
                             ${itemsHTML}

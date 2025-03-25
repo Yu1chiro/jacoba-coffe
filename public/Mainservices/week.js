@@ -411,7 +411,13 @@ function getUniqueVariants(products) {
         setupweeks(products);
         renderweekProducts(products);
       } else {
-        weekContainer.innerHTML = "<p class='text-gray-800 text-center'>Tidak ada produk week.</p>";
+        const containerContent = document.querySelector('.week-container'); // Ambil elemen dengan class container-content
+  
+        // Tampilkan pesan error  
+        // Tambahkan class 'hidden' ke container-content jika tidak ada data
+        if (containerContent) {
+          containerContent.classList.add('hidden');
+        }
       }
     });
   }

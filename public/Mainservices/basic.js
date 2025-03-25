@@ -238,27 +238,6 @@ async function updateProductQuantity(userId, productId, change) {
           </div>
         </div>
   
-        <!-- Form Pemesan -->
-        <div class="w-full space-y-[4%] bg-white p-[5%] rounded-xl shadow-sm">
-          <div class="w-full">
-            <label class="block text-[0.9rem] font-medium text-gray-700 mb-[2%]">
-              Nama Pemesan:
-            </label>
-            <input id="customerName" 
-                   class="w-full py-[2%] px-[3%] rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                   placeholder="Masukkan nama Anda">
-          </div>
-          
-          <div class="w-full">
-            <label class="block text-[0.9rem] font-medium text-gray-700 mb-[2%]">
-              Nomor Meja:
-            </label>
-            <input id="tableNumber" 
-                   class="w-full py-[2%] px-[3%] rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" 
-                   placeholder="Masukkan nomor meja">
-          </div>
-        </div>
-      </div>
       `,
       customClass: {
         container: 'checkout-modal',
@@ -300,17 +279,8 @@ async function updateProductQuantity(userId, productId, change) {
       },
       preConfirm: () => {
         const quantity = parseInt(document.getElementById('quantity').value);
-        const customerName = document.getElementById('customerName').value;
-        const tableNumber = document.getElementById('tableNumber').value;
-        
-        if (!customerName || !tableNumber || quantity < 1) {
-          Swal.showValidationMessage('Nama, nomor meja, dan kuantitas harus diisi dengan benar!');
-          return false;
-        }
         
         return { 
-          customerName, 
-          tableNumber, 
           quantity 
         };
       }
@@ -319,18 +289,12 @@ async function updateProductQuantity(userId, productId, change) {
     if (result.isConfirmed) {
       try {
         await set(ref(database, `customers/${userId}/profile`), {
-          name: result.value.customerName,
-          tableNumber: result.value.tableNumber,
           lastUpdated: new Date().toISOString()
         });
   
         await addToCart(userId, {
           ...productData,
           quantity: result.value.quantity,
-          customerInfo: {
-            name: result.value.customerName,
-            tableNumber: result.value.tableNumber,
-          }
         });
   
         await Swal.fire({
@@ -483,7 +447,7 @@ function renderbasicProducts(products) {
     const productCard = `
       <div class="relative max-w-sm text-[#cbac85] bg-[#3e1e04] border border-gray-200 rounded-lg shadow-sm" data-product-id="${product.id}">
         <div class="relative">
-          <img class="rounded-t-lg w-full h-48 object-cover" src="${product.thumbnail}" alt="${product.name}" />
+          <img class="rounded-t-lg w-full h-48 object-cover" src="/asset/${product.thumbnail}" alt="${product.name}" />
           <span class="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded-lg shadow-md">
             ${product.variant || 'N/A'}
           </span>

@@ -1,10 +1,9 @@
+import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
 async function getFirebaseConfig() {
   try {
-    const response = await fetch('/firebase-config');
+    const response = await fetch('/auth-config');
     if (!response.ok) throw new Error('Failed to load Firebase config');
     return response.json();
   } catch (error) {
@@ -13,108 +12,119 @@ async function getFirebaseConfig() {
   }
 }
 
-function getCurrentPath() {
-  return window.location.pathname;
+async function initializeFirebase() {
+  const firebaseConfig = await getFirebaseConfig();
+  return initializeApp(firebaseConfig);
 }
 
-async function checkAdminRole(user, database) {
+async function login(email, password) {
   try {
-    if (!user?.uid) return false;
+    const app = await initializeFirebase();
+    const auth = getAuth(app);
     
-    const adminRef = ref(database, `admin/${user.uid}`);
-    const snapshot = await get(adminRef);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
     
-    if (!snapshot.exists()) {
-      console.warn('User tidak ditemukan di database admin');
-      return false;
-    }
+    // Dapatkan token ID untuk otentikasi server
+    const idToken = await user.getIdToken();
     
-    const adminData = snapshot.val();
-    return adminData?.role === 'admin';
-  } catch (error) {
-    console.error('Error saat memeriksa role admin:', error);
-    return false;
-  }
-}
-
-async function redirectBasedOnAuth(user, database) {
-  const currentPath = getCurrentPath();
-  const isAuthPage = currentPath === '/Auth/sign.html';
-  const isDashboardPage = currentPath.startsWith('/Dashboard/');
-
-  try {
-    if (!user) {
-      sessionStorage.removeItem('isLoggedIn');
-      if (!isAuthPage) {
-        window.location.href = '/Auth/sign.html';
-      }
-      return;
-    }
-
-    const isAdmin = await checkAdminRole(user, database);
+    // Kirim token ke server untuk membuat sesi
+    const response = await fetch('/sessionLogin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ idToken })
+    });
     
-    if (!isAdmin) {
-      await signOut(getAuth());
-      sessionStorage.removeItem('isLoggedIn');
-      window.location.href = '/Auth/sign.html';
-      return;
-    }
-
-    sessionStorage.setItem('isLoggedIn', 'true');
+    const data = await response.json();
     
-    if (isAuthPage || !isDashboardPage) {
-      window.location.href = '/Dashboard/admin.html';
+    if (data.status === 'success') {
+      window.location.href = '/admin';
+    } else {
+      throw new Error('Login gagal');
     }
   } catch (error) {
-    console.error('Error dalam proses redirect:', error);
-    window.location.href = '/Auth/sign.html';
+    console.error('Error login:', error);
+    throw error;
   }
 }
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    // Inisialisasi Firebase
+    const app = await initializeFirebase();
+    const auth = getAuth(app);
 
-function initializeUIElements(user) {
-  const content = document.getElementById('content');
-  const hide = document.getElementById('hide-element');
+    // Tambahkan event listener untuk button logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          // Tampilkan konfirmasi logout
+          Swal.fire({
+            title: 'Konfirmasi Logout',
+            text: 'Apakah Anda yakin ingin keluar?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Keluar',
+            cancelButtonText: 'Batal'
+          }).then(async (result) => {
+            if (result.isConfirmed) {
+              // Tampilkan loading
+              Swal.fire({
+                title: 'Logging out...',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                  Swal.showLoading();
+                }
+              });
 
-  if (!content || !hide) return;
+              // Logout dari Firebase
+              await auth.signOut();
+              
+              // Hapus session di server
+              await fetch('/sessionLogout', { 
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
 
-  const updateDisplay = () => {
-    const isMobile = window.innerWidth < 768;
-    content.style.display = user && !isMobile ? 'block' : 'none';
-    hide.style.display = user ? 'block' : 'none';
-  };
-
-  updateDisplay();
-  window.addEventListener('resize', updateDisplay);
-}
-
-function setupLogoutHandler(auth) {
-  const logoutButton = document.getElementById('logout-session');
-  if (!logoutButton) return;
-
-  logoutButton.addEventListener('click', async () => {
-    try {
-      await signOut(auth);
-      sessionStorage.removeItem('isLoggedIn');
-      window.location.href = '/Auth/sign.html';
-    } catch (error) {
-      console.error('Error saat logout:', error);
+              // Redirect ke halaman login
+              Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Logout',
+                text: 'Anda telah berhasil keluar dari sistem.',
+                showConfirmButton: false,
+                timer: 1500
+              }).then(() => {
+                window.location.href = '/sign';
+              });
+            }
+          });
+        } catch (error) {
+          console.error('Error saat logout:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Logout Gagal',
+            text: 'Terjadi kesalahan saat mencoba logout. Silakan coba lagi.'
+          });
+        }
+      });
     }
-  });
-}
-
-// Inisialisasi aplikasi
-getFirebaseConfig().then(firebaseConfig => {
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const database = getDatabase(app);
-
-  onAuthStateChanged(auth, async (user) => {
-    await redirectBasedOnAuth(user, database);
-    initializeUIElements(user);
-  });
-
-  setupLogoutHandler(auth);
-}).catch(error => {
-  console.error('Error saat inisialisasi aplikasi:', error);
-  window.location.href = '/Auth/sign.html';
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+  }
 });
+
+async function logout() {
+  try {
+    await fetch('/sessionLogout', { method: 'POST' });
+    window.location.href = '/sign';
+  } catch (error) {
+    console.error('Error logout:', error);
+  }
+}
+
+export { login, logout };

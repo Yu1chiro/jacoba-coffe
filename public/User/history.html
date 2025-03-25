@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-[#3e1e04] border-gray-200 px-4 lg:px-6 py-4">
+        <div class="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl">
+          <!-- Logo atau Judul -->
+          <div class="flex items-center">
+            <span class="text-2xl font-semibold text-white">History</span>
+          </div>
+      
+          <!-- Menu Kanan (Profil dan Tombol Sign Out) -->
+          <div class="flex items-center gap-4 mt-4 lg:mt-0">
+            <!-- Profil Pengguna -->
+            <div id="userProfile" class="flex items-center gap-2">
+              <img id="userPhoto" class="w-10 h-10 rounded-full" src="" alt="User photo">
+              <span id="userName" class="text-white"></span>
+            </div>
+      
+            <!-- Tombol Sign Out -->
+            <button id="signOut" class="text-white hover:text-yellow-500">Sign Out</button>
+          </div>
+        </div>
+      </nav>
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Status Pembayaran Produk</h2>
+        <div  id="history-user" class="bg-white shadow-md rounded-lg overflow-hidden">
+          
+        </div>
+      </div>
+    <script type="module" src="/User/history.js"></script>   
+</body>
+</html>

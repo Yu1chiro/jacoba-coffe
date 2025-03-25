@@ -16,6 +16,7 @@ async function getFirebaseConfig() {
 }
 
 // Inisialisasi Firebase
+// Inisialisasi Firebase
 getFirebaseConfig().then(firebaseConfig => {
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -23,49 +24,6 @@ getFirebaseConfig().then(firebaseConfig => {
 
   // Reference untuk basic
   const basicRef = ref(database, 'basic-product');
-
-  // Fungsi untuk mengompres gambar
-  function compressImage(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const img = new Image();
-        img.src = event.target.result;
-        
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const maxWidth = 800;
-          const maxHeight = 800;
-          
-          if (width > height) {
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-          } else {
-            if (height > maxHeight) {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-          resolve(compressedBase64);
-        };
-        
-        img.onerror = reject;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
 
   // Fungsi untuk menambahkan produk basic
   async function addbasicProduct(productData) {
@@ -88,6 +46,13 @@ getFirebaseConfig().then(firebaseConfig => {
     }
   }
 
+  // Fungsi untuk mengekstrak ID dari link Google Drive
+  function extractGoogleDriveId(url) {
+    const regex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+    const match = url.match(regex);
+    return match && match[1] ? match[1] : null;
+  }
+
   // Event listener untuk tombol "Tambah Produk"
   document.getElementById('add-basic').addEventListener('click', function() {
     Swal.fire({
@@ -99,8 +64,8 @@ getFirebaseConfig().then(firebaseConfig => {
             <input type="text" id="basic-name" class="w-full px-4 py-2 border rounded-lg" placeholder="Masukkan nama produk" required>
           </div>
           <div class="mb-4">
-            <label class="block text-gray-700 font-medium mb-2">Thumbnail Produk</label>
-            <input type="file" id="basic-thumbnail" class="w-full px-4 py-2 border rounded-lg" accept="image/*" required>
+            <label class="block text-gray-700 font-medium mb-2">Thumbnail Produk (Google Drive Link)</label>
+            <input type="text" id="basic-thumbnail" class="w-full px-4 py-2 border rounded-lg" placeholder="Masukkan link Google Drive" required>
           </div>
           <div class="mb-4">
             <label class="block text-gray-700 font-medium mb-2">Kategori</label>
@@ -130,20 +95,23 @@ getFirebaseConfig().then(firebaseConfig => {
           e.preventDefault();
           try {
             const name = document.getElementById('basic-name').value;
-            const thumbnail = document.getElementById('basic-thumbnail').files[0];
+            const thumbnailLink = document.getElementById('basic-thumbnail').value;
             const category = document.getElementById('basic-category').value;
             const variant = document.getElementById('basic-variant').value;
             const price = document.getElementById('basic-price').value;
 
-            if (!name || !thumbnail || !category || !price) {
+            if (!name || !thumbnailLink || !category || !price) {
               throw new Error('Mohon lengkapi semua field yang diperlukan');
             }
 
-            const compressedThumbnail = await compressImage(thumbnail);
-            
+            const thumbnailId = extractGoogleDriveId(thumbnailLink);
+            if (!thumbnailId) {
+              throw new Error('Link Google Drive tidak valid');
+            }
+
             const productData = {
               name,
-              thumbnail: compressedThumbnail,
+              thumbnail: thumbnailId,
               category,
               variant: variant || null,
               price: parseFloat(price)
@@ -197,6 +165,10 @@ getFirebaseConfig().then(firebaseConfig => {
             <input type="text" id="edit-name" class="w-full px-4 py-2 border rounded-lg" value="${productData.name}" required>
           </div>
           <div class="mb-4">
+            <label class="block text-gray-700 font-medium mb-2">Thumbnail</label>
+            <input type="link" id="edit-thumbnail" class="w-full px-4 py-2 border rounded-lg" value="${productData.name}" required>
+          </div>
+          <div class="mb-4">
             <label class="block text-gray-700 font-medium mb-2">Kategori</label>
             <select id="edit-category" class="w-full px-4 py-2 border rounded-lg" required>
               <option value="Makanan" ${productData.category === 'Makanan' ? 'selected' : ''}>Makanan</option>
@@ -222,18 +194,24 @@ getFirebaseConfig().then(firebaseConfig => {
       preConfirm: async () => {
         try {
           const newName = document.getElementById('edit-name').value;
+          const newthumbnailLink = document.getElementById('edit-thumbnail').value;
           const newCategory = document.getElementById('edit-category').value;
           const newVariant = document.getElementById('edit-variant').value;
           const newPrice = document.getElementById('edit-price').value;
 
-          if (!newName || !newCategory || !newPrice) {
+          if (!newName || !newthumbnailLink || !newCategory || !newPrice) {
             Swal.showValidationMessage('Mohon lengkapi semua field yang diperlukan');
             return false;
           }
+          const thumbnailId = extractGoogleDriveId(newthumbnailLink);
+            if (!thumbnailId) {
+              throw new Error('Link Google Drive tidak valid');
+            }
 
           const updatedData = {
             ...productData,
             name: newName,
+            thumbnail: thumbnailId,
             category: newCategory,
             variant: newVariant || null,
             price: parseFloat(newPrice)
@@ -311,7 +289,7 @@ getFirebaseConfig().then(firebaseConfig => {
           row.innerHTML = `
             <td class="w-1/3 text-center py-3 px-4">${product.name}</td>
             <td class="w-1/3 text-center py-3 px-4">
-              <img src="${product.thumbnail}" alt="${product.name}" class="w-20 h-20 object-cover mx-auto rounded">
+              <img src="/asset/${product.thumbnail}" alt="${product.name}" class="w-20 h-20 object-cover mx-auto rounded">
             </td>
             <td class="text-center py-3 px-4">${product.category}</td>
             <td class="text-center py-3 px-4">${product.variant || '-'}</td>
@@ -342,6 +320,7 @@ getFirebaseConfig().then(firebaseConfig => {
       }
     });
   }
+
   // Ekspos fungsi ke global scope
   window.editbasicProductPrompt = editbasicProductPrompt;
   window.deletebasicProduct = deletebasicProduct;

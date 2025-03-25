@@ -21,56 +21,13 @@ getFirebaseConfig().then(firebaseConfig => {
   const auth = getAuth(app);
   const database = getDatabase(app);
 
-  // Reference untuk bestseller
-  const bestsellerRef = ref(database, 'best-seller');
+  // Reference untuk best
+  const bestRef = ref(database, 'best-seller');
 
-  // Fungsi untuk mengompres gambar
-  function compressImage(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const img = new Image();
-        img.src = event.target.result;
-        
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const maxWidth = 800;
-          const maxHeight = 800;
-          
-          if (width > height) {
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-          } else {
-            if (height > maxHeight) {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-          resolve(compressedBase64);
-        };
-        
-        img.onerror = reject;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // Fungsi untuk menambahkan produk bestseller
-  async function addBestsellerProduct(productData) {
+  // Fungsi untuk menambahkan produk best
+  async function addbestProduct(productData) {
     try {
-      const newProductRef = push(bestsellerRef);
+      const newProductRef = push(bestRef);
       const productId = newProductRef.key;
       
       const enhancedProductData = {
@@ -88,19 +45,26 @@ getFirebaseConfig().then(firebaseConfig => {
     }
   }
 
+  // Fungsi untuk mengekstrak ID dari link Google Drive
+  function extractGoogleDriveId(url) {
+    const regex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+    const match = url.match(regex);
+    return match && match[1] ? match[1] : null;
+  }
+
   // Event listener untuk tombol "Tambah Produk"
   document.getElementById('add-bestseller').addEventListener('click', function() {
     Swal.fire({
-      title: 'Tambah Produk Bestseller',
+      title: 'Add Jacoba Menu',
       html: `
-        <form id="bestseller-product" class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md text-start">
+        <form id="best-product" class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md text-start">
           <div class="mb-4">
             <label class="block text-gray-700 font-medium mb-2">Nama Produk</label>
             <input type="text" id="best-name" class="w-full px-4 py-2 border rounded-lg" placeholder="Masukkan nama produk" required>
           </div>
           <div class="mb-4">
-            <label class="block text-gray-700 font-medium mb-2">Thumbnail Produk</label>
-            <input type="file" id="best-thumbnail" class="w-full px-4 py-2 border rounded-lg" accept="image/*" required>
+            <label class="block text-gray-700 font-medium mb-2">Thumbnail Produk (Google Drive Link)</label>
+            <input type="text" id="best-thumbnail" class="w-full px-4 py-2 border rounded-lg" placeholder="Masukkan link Google Drive" required>
           </div>
           <div class="mb-4">
             <label class="block text-gray-700 font-medium mb-2">Kategori</label>
@@ -125,31 +89,34 @@ getFirebaseConfig().then(firebaseConfig => {
       showConfirmButton: false,
       showCloseButton: true,
       didOpen: () => {
-        const form = document.getElementById('bestseller-product');
+        const form = document.getElementById('best-product');
         form.addEventListener('submit', async function(e) {
           e.preventDefault();
           try {
             const name = document.getElementById('best-name').value;
-            const thumbnail = document.getElementById('best-thumbnail').files[0];
+            const thumbnailLink = document.getElementById('best-thumbnail').value;
             const category = document.getElementById('best-category').value;
             const variant = document.getElementById('best-variant').value;
             const price = document.getElementById('best-price').value;
 
-            if (!name || !thumbnail || !category || !price) {
+            if (!name || !thumbnailLink || !category || !price) {
               throw new Error('Mohon lengkapi semua field yang diperlukan');
             }
 
-            const compressedThumbnail = await compressImage(thumbnail);
-            
+            const thumbnailId = extractGoogleDriveId(thumbnailLink);
+            if (!thumbnailId) {
+              throw new Error('Link Google Drive tidak valid');
+            }
+
             const productData = {
               name,
-              thumbnail: compressedThumbnail,
+              thumbnail: thumbnailId,
               category,
               variant: variant || null,
               price: parseFloat(price)
             };
 
-            await addBestsellerProduct(productData);
+            await addbestProduct(productData);
             
             Swal.fire({
               icon: 'success',
@@ -157,7 +124,7 @@ getFirebaseConfig().then(firebaseConfig => {
               text: 'Produk berhasil ditambahkan!'
             });
 
-            loadBestsellerProducts();
+            loadbestProducts();
           } catch (error) {
             Swal.fire({
               icon: 'error',
@@ -171,7 +138,7 @@ getFirebaseConfig().then(firebaseConfig => {
   });
 
   // Fungsi untuk mengedit produk
-  async function editBestsellerProduct(productId, productData) {
+  async function editbestProduct(productId, productData) {
     try {
       const productRef = ref(database, `best-seller/${productId}`);
       const updatedData = {
@@ -187,14 +154,18 @@ getFirebaseConfig().then(firebaseConfig => {
   }
 
   // Fungsi untuk menampilkan form edit
-  async function editBestsellerProductPrompt(productId, productData) {
+  async function editbestProductPrompt(productId, productData) {
     Swal.fire({
-      title: 'Edit Produk Bestseller',
+      title: 'Edit Produk',
       html: `
-        <form id="edit-bestseller-form" class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md text-start">
+        <form id="edit-best-form" class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md text-start">
           <div class="mb-4">
             <label class="block text-gray-700 font-medium mb-2">Nama Produk</label>
             <input type="text" id="edit-name" class="w-full px-4 py-2 border rounded-lg" value="${productData.name}" required>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 font-medium mb-2">Thumbnail</label>
+            <input type="link" id="edit-thumbnail" class="w-full px-4 py-2 border rounded-lg" value="${productData.name}" required>
           </div>
           <div class="mb-4">
             <label class="block text-gray-700 font-medium mb-2">Kategori</label>
@@ -222,24 +193,30 @@ getFirebaseConfig().then(firebaseConfig => {
       preConfirm: async () => {
         try {
           const newName = document.getElementById('edit-name').value;
+          const newthumbnailLink = document.getElementById('edit-thumbnail').value;
           const newCategory = document.getElementById('edit-category').value;
           const newVariant = document.getElementById('edit-variant').value;
           const newPrice = document.getElementById('edit-price').value;
 
-          if (!newName || !newCategory || !newPrice) {
+          if (!newName || !newthumbnailLink || !newCategory || !newPrice) {
             Swal.showValidationMessage('Mohon lengkapi semua field yang diperlukan');
             return false;
           }
+          const thumbnailId = extractGoogleDriveId(newthumbnailLink);
+            if (!thumbnailId) {
+              throw new Error('Link Google Drive tidak valid');
+            }
 
           const updatedData = {
             ...productData,
             name: newName,
+            thumbnail: thumbnailId,
             category: newCategory,
             variant: newVariant || null,
             price: parseFloat(newPrice)
           };
 
-          await editBestsellerProduct(productId, updatedData);
+          await editbestProduct(productId, updatedData);
           return true;
         } catch (error) {
           Swal.showValidationMessage(error.message);
@@ -253,13 +230,13 @@ getFirebaseConfig().then(firebaseConfig => {
           title: 'Berhasil',
           text: 'Produk berhasil diperbarui!'
         });
-        loadBestsellerProducts();
+        loadbestProducts();
       }
     });
   }
 
   // Fungsi untuk menghapus produk
-  async function deleteBestsellerProduct(productId) {
+  async function deletebestProduct(productId) {
     try {
       Swal.fire({
         title: 'Apakah Anda yakin?',
@@ -281,7 +258,7 @@ getFirebaseConfig().then(firebaseConfig => {
             'success'
           );
           
-          loadBestsellerProducts();
+          loadbestProducts();
         }
       });
     } catch (error) {
@@ -294,58 +271,59 @@ getFirebaseConfig().then(firebaseConfig => {
   }
 
   // Fungsi untuk memuat dan menampilkan data
-  function loadBestsellerProducts() {
-    onValue(bestsellerRef, (snapshot) => {
-      const bestsellers = snapshot.val();
-      const bestsellersListElement = document.getElementById('bestseller-list');
-      bestsellersListElement.innerHTML = '';
+  function loadbestProducts() {
+    onValue(bestRef, (snapshot) => {
+      const bests = snapshot.val();
+      const bestsListElement = document.getElementById('bestseller-list');
+      bestsListElement.innerHTML = '';
 
-      if (bestsellers) {
-        const bestsellersArray = Object.entries(bestsellers)
+      if (bests) {
+        const bestsArray = Object.entries(bests)
           .map(([key, value]) => ({ id: key, ...value }))
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        bestsellersArray.forEach(product => {
+        bestsArray.forEach(product => {
           const row = document.createElement('tr');
           row.className = 'border-b hover:bg-gray-100 transition duration-300';
           row.innerHTML = `
             <td class="w-1/3 text-center py-3 px-4">${product.name}</td>
             <td class="w-1/3 text-center py-3 px-4">
-              <img src="${product.thumbnail}" alt="${product.name}" class="w-20 h-20 object-cover mx-auto rounded">
+              <img src="/asset/${product.thumbnail}" alt="${product.name}" class="w-20 h-20 object-cover mx-auto rounded">
             </td>
             <td class="text-center py-3 px-4">${product.category}</td>
             <td class="text-center py-3 px-4">${product.variant || '-'}</td>
             <td class="text-center py-3 px-4">Rp ${product.price.toLocaleString('id-ID')}</td>
             <td class="text-center py-3 px-4">
               <button 
-                onclick="window.editBestsellerProductPrompt('${product.id}', ${JSON.stringify(product).replace(/"/g, '&quot;')})"
+                onclick="window.editbestProductPrompt('${product.id}', ${JSON.stringify(product).replace(/"/g, '&quot;')})"
                 class="bg-green-500 text-white mb-2 px-3 py-1 rounded hover:bg-green-600 transition duration-300 mr-2">
                 Edit
               </button>
               <button 
-                onclick="window.deleteBestsellerProduct('${product.id}')"
+                onclick="window.deletebestProduct('${product.id}')"
                 class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition duration-300">
                 Hapus
               </button>
             </td>
           `;
-          bestsellersListElement.appendChild(row);
+          bestsListElement.appendChild(row);
         });
       } else {
-        bestsellersListElement.innerHTML = `
+        bestsListElement.innerHTML = `
           <tr>
             <td colspan="6" class="text-center py-4 text-gray-500">
-              Tidak ada produk bestseller
+              Tidak ada produk best
             </td>
           </tr>
         `;
       }
     });
   }
-  // Ekspos fungsi ke global scope
-  window.editBestsellerProductPrompt = editBestsellerProductPrompt;
-  window.deleteBestsellerProduct = deleteBestsellerProduct;
 
-  // Panggil fungsi untuk memuat produk bestseller
-  loadBestsellerProducts();
+  // Ekspos fungsi ke global scope
+  window.editbestProductPrompt = editbestProductPrompt;
+  window.deletebestProduct = deletebestProduct;
+
+  // Panggil fungsi untuk memuat produk best
+  loadbestProducts();
 });

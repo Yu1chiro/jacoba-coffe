@@ -195,7 +195,7 @@ async function updateProductQuantity(userId, productId, change) {
             <!-- Detail Produk -->
             <div class="w-full flex flex-row gap-[4%] items-start">
               <div class="w-[30%] relative aspect-square">
-                <img src="${productData.thumbnail}" 
+                <img src="/asset/${productData.thumbnail}" 
                      alt="${productData.name}" 
                      class="w-full h-full object-cover rounded-lg shadow-md">
               </div>
@@ -413,28 +413,47 @@ async function updateProductQuantity(userId, productId, change) {
       const formattedPrice = new Intl.NumberFormat('id-ID').format(product.price);
   
       const productCard = `
-        <div class="relative max-w-sm text-[#3e1e04] bg-[#cbac85] border border-gray-200 rounded-lg shadow-sm" data-product-id="${product.id}">
-          <div class="relative">
-            <img class="rounded-t-lg w-full h-48 object-cover" src="${product.thumbnail}" alt="${product.name}" />
-            <span class="absolute top-2 right-2  bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded-lg shadow-md">
-              ${product.variant || 'N/A'}
-            </span>
-          </div>
-          <div class="p-5">
-            <h5 class="mb-2 text-sm lg:text-xl font-bold tracking-wide">${product.name}</h5>
-            <p class="mb-3 font-medium text-sm lg:text-lg">Rp. ${formattedPrice}</p>
-            <button class="order-button inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#3e1e04] rounded-lg hover:bg-[#2d1503] transition duration-300">
-              <svg class="me-2" xmlns="http://www.w3.org/2000/svg" fill="white" height="20px" width="20px" viewBox="0 0 24 24">
-                <g id="shop-cart">
-                  <circle cx="9" cy="21" r="2"/>
-                  <circle cx="19" cy="21" r="2"/>
-                  <path d="M21,18H7.2l-4-16H0V0h4.8l0.8,3H24l-3.2,11H8.3l0.5,2H21V18z M7.8,12h11.5l2-7H6L7.8,12z"/>
-                </g>
-              </svg>
-              Order Now
-            </button>
-          </div>
-        </div>
+       <div class="relative max-w-sm text-[#3e1e04] bg-[#cbac85] border border-gray-200 rounded-lg shadow-sm" data-product-id="${product.id}">
+  <div class="relative">
+    <img class="rounded-t-lg w-full h-48 object-cover" src="/asset/${product.thumbnail}" alt="${product.name}" />
+    <span class="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded-lg shadow-md">
+      ${product.variant || 'N/A'}
+    </span>
+  </div>
+  <div class="p-5">
+    <!-- Tambahkan bintang 5 di sini -->
+    <div class="flex justify-center mb-1">
+      <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+      </svg>
+      <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+      </svg>
+      <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+      </svg>
+      <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+      </svg>
+      <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+      </svg>
+    </div>
+    <!-- Nama produk -->
+    <h5 class="mb-2 text-sm lg:text-xl font-bold tracking-wide">${product.name}</h5>
+    <p class="mb-3 font-medium text-sm lg:text-lg">Rp. ${formattedPrice}</p>
+    <button class="order-button inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#3e1e04] rounded-lg hover:bg-[#2d1503] transition duration-300">
+      <svg class="me-2" xmlns="http://www.w3.org/2000/svg" fill="white" height="20px" width="20px" viewBox="0 0 24 24">
+        <g id="shop-cart">
+          <circle cx="9" cy="21" r="2"/>
+          <circle cx="19" cy="21" r="2"/>
+          <path d="M21,18H7.2l-4-16H0V0h4.8l0.8,3H24l-3.2,11H8.3l0.5,2H21V18z M7.8,12h11.5l2-7H6L7.8,12z"/>
+        </g>
+      </svg>
+      Order Now
+    </button>
+  </div>
+</div>
       `;
   
       bestSellerContainer.innerHTML += productCard;

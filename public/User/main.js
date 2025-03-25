@@ -1,7 +1,7 @@
 // Import Firebase
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getDatabase, ref,  onValue, remove, set, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+import { getDatabase, ref, update,  onValue, remove, set, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 // Fungsi untuk mendapatkan konfigurasi Firebase dari server
 async function getFirebaseConfig() {
     try {
@@ -113,107 +113,116 @@ getFirebaseConfig().then(firebaseConfig => {
         });
     }
 
-
-  // Handle sign out
-  document.getElementById('signOut').addEventListener('click', async () => {
-    try {
-      await signOut(auth);
-      window.location.href = '/';
-    } catch (error) {
-      console.error("Error signing out:", error);
-      alert('Gagal sign out');
-    }
-  });
-
-  document.getElementById('checkoutButton').addEventListener('click', async () => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    const database = getDatabase();
-    
-    if (!user) {
-        Swal.fire('Error', 'Silakan login terlebih dahulu', 'error');
-        return;
-    }
-
-    // Ambil data cart
-    const cartRef = ref(database, `customers/${user.uid}/cart`);
-    const cartSnapshot = await get(cartRef);
-    
-    if (!cartSnapshot.exists()) {
-        Swal.fire('Error', 'Keranjang belanja kosong', 'error');
-        return;
-    }
-
-    const cartItems = [];
-    let totalPrice = 0;
-    
-    cartSnapshot.forEach((childSnapshot) => {
-        const item = childSnapshot.val();
-        cartItems.push(item);
-        totalPrice += item.price * item.quantity;
-    });
-
-    // Tampilkan modal pemilihan metode pembayaran
-    const modalResult = await Swal.fire({
-        title: 'Pilih Metode Pembayaran',
-        html: `
-            <div class="flex flex-col space-y-4 text-left">
-                <div class="payment-option flex items-center space-x-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100" data-method="QRIS">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/QRIS_logo.svg" class="w-10 h-10" alt="QRIS">
-                    <span class="text-lg font-semibold">QRIS : Transfer</span>
-                </div>
-                <div class="payment-option flex items-center space-x-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100" data-method="CASH">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Cash_icon.svg" class="w-10 h-10" alt="CASH">
-                    <span class="text-lg font-semibold">CASH : Tunai</span>
-                </div>
-            </div>
-        `,
-        showConfirmButton: false,
-        showCancelButton: true,
-        cancelButtonText: 'Batal',
-        allowOutsideClick: false,
-        didOpen: () => {
-            // Tambahkan event listener untuk opsi pembayaran
-            const paymentOptions = document.querySelectorAll('.payment-option');
-            paymentOptions.forEach(option => {
-                option.addEventListener('click', async () => {
-                    const method = option.dataset.method;
-                    Swal.close();
-                    
-                    // Proses sesuai metode yang dipilih
-                    if (method === 'QRIS') {
-                        await handleQRISPayment(user, cartItems, totalPrice);
-                    } else if (method === 'CASH') {
-                        await handleCashPayment(user, cartItems, totalPrice);
-                    }
-                });
-            });
+    // Handle sign out
+    document.getElementById('signOut').addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            window.location.href = '/';
+        } catch (error) {
+            console.error("Error signing out:", error);
+            alert('Gagal sign out');
         }
     });
 
-    // Jika user membatalkan atau mengklik di luar, tidak ada aksi yang dijalankan
-    if (modalResult.dismiss === Swal.DismissReason.cancel || 
-        modalResult.dismiss === Swal.DismissReason.backdrop) {
-        return;
-    }
-    
-    async function handleQRISPayment(user, cartItems, totalPrice) {
+    document.getElementById('checkoutButton').addEventListener('click', async () => {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        const database = getDatabase();
+        
+        if (!user) {
+            Swal.fire('Error', 'Silakan login terlebih dahulu', 'error');
+            return;
+        }
+
+        // Ambil data cart
+        const cartRef = ref(database, `customers/${user.uid}/cart`);
+        const cartSnapshot = await get(cartRef);
+        
+        if (!cartSnapshot.exists()) {
+            Swal.fire('Error', 'Keranjang belanja kosong', 'error');
+            return;
+        }
+
+        const cartItems = [];
+        let totalPrice = 0;
+        
+        cartSnapshot.forEach((childSnapshot) => {
+            const item = childSnapshot.val();
+            cartItems.push(item);
+            totalPrice += item.price * item.quantity;
+        });
+
+        // Ambil nilai dari input name dan meja
+        const customerName = document.getElementById('customerName').value;
+        const tableNumber = document.getElementById('tableNumber').value;
+
+        // Tampilkan modal pemilihan metode pembayaran
+        const modalResult = await Swal.fire({
+            title: 'Pilih Metode Pembayaran',
+            html: `
+                <div class="flex flex-col space-y-4 text-left">
+                    <div class="payment-option flex items-center space-x-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100" data-method="QRIS">
+                        <img src="https://images.seeklogo.com/logo-png/39/1/quick-response-code-indonesia-standard-qris-logo-png_seeklogo-391791.png" class="w-10 h-10" alt="QRIS">
+                        <span class="text-lg font-semibold">QRIS : Transfer</span>
+                    </div>
+                    <div class="payment-option flex items-center space-x-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100" data-method="CASH">
+                        <img src="https://media.istockphoto.com/id/1452667058/id/vektor/ikon-pembayaran-tunai-di-vektor-logo.jpg?s=612x612&w=0&k=20&c=L-cNI2glF2UwANI0WjbvgyuqBysVCUS64lHt0JcQhoU=" class="w-10 h-10" alt="CASH">
+                        <span class="text-lg font-semibold">CASH : Tunai</span>
+                    </div>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Batal',
+            allowOutsideClick: false,
+            didOpen: () => {
+                // Tambahkan event listener untuk opsi pembayaran
+                const paymentOptions = document.querySelectorAll('.payment-option');
+                paymentOptions.forEach(option => {
+                    option.addEventListener('click', async () => {
+                        const method = option.dataset.method;
+                        Swal.close();
+                        
+                        // Proses sesuai metode yang dipilih
+                        if (method === 'QRIS') {
+                            await handleQRISPayment(user, cartItems, totalPrice, customerName, tableNumber);
+                        } else if (method === 'CASH') {
+                            await handleCashPayment(user, cartItems, totalPrice, customerName, tableNumber);
+                        }
+                    });
+                });
+            }
+        });
+
+        // Jika user membatalkan atau mengklik di luar, tidak ada aksi yang dijalankan
+        if (modalResult.dismiss === Swal.DismissReason.cancel || 
+            modalResult.dismiss === Swal.DismissReason.backdrop) {
+            return;
+        }
+    });
+
+    async function handleQRISPayment(user, cartItems, totalPrice, customerName, tableNumber) {
         try {
-            // Tampilkan QR Code dan tunggu user mengklik tombol Upload Bukti Pembayaran
+            const orderNotes = document.getElementById('orderNotes')?.value || '';
+            
+            // Show QR Code and wait for payment proof upload
             const qrResult = await Swal.fire({
                 title: 'Scan QR Code',
                 html: `
                     <img src="/User/img/qris.jpeg" class="mx-auto w-64 h-64">
                     <p class="mt-4">Total Pembayaran: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
+                    <div class="mt-4 text-left">
+                        <p class="font-semibold">Catatan Pesanan:</p>
+                        <p>${orderNotes || 'Tidak ada catatan'}</p>
+                    </div>
                 `,
                 confirmButtonText: 'Upload Bukti Pembayaran',
                 showCancelButton: true,
                 cancelButtonText: 'Batal'
             });
     
-            // Hanya lanjut ke proses upload jika user mengklik tombol Upload Bukti Pembayaran
             if (qrResult.isConfirmed) {
-                // Upload bukti pembayaran
+                // Upload payment proof
                 const { value: buktiPembayaran } = await Swal.fire({
                     title: 'Upload Bukti Pembayaran',
                     input: 'file',
@@ -226,7 +235,7 @@ getFirebaseConfig().then(firebaseConfig => {
                 });
     
                 if (buktiPembayaran) {
-                    // Tampilkan loading state
+                    // Show loading state
                     Swal.fire({
                         title: 'Memproses Pembayaran',
                         text: 'Mohon tunggu sebentar...',
@@ -236,7 +245,7 @@ getFirebaseConfig().then(firebaseConfig => {
                         }
                     });
     
-                    // Fungsi untuk mengompres gambar
+                    // Image compression function
                     const compressImage = async (file) => {
                         return new Promise((resolve) => {
                             const reader = new FileReader();
@@ -247,11 +256,9 @@ getFirebaseConfig().then(firebaseConfig => {
                                     let width = img.width;
                                     let height = img.height;
     
-                                    // Maksimum dimensi yang diinginkan
                                     const MAX_WIDTH = 800;
                                     const MAX_HEIGHT = 800;
     
-                                    // Hitung rasio aspek
                                     if (width > height) {
                                         if (width > MAX_WIDTH) {
                                             height *= MAX_WIDTH / width;
@@ -270,7 +277,6 @@ getFirebaseConfig().then(firebaseConfig => {
                                     const ctx = canvas.getContext('2d');
                                     ctx.drawImage(img, 0, 0, width, height);
     
-                                    // Konversi ke base64 dengan kualitas 0.7 (70%)
                                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
                                     resolve(compressedBase64);
                                 };
@@ -280,10 +286,10 @@ getFirebaseConfig().then(firebaseConfig => {
                         });
                     };
     
-                    // Kompres gambar sebelum upload
+                    // Compress image
                     const compressedPaymentProof = await compressImage(buktiPembayaran);
                     
-                    // Create order data
+                    // Create complete order data
                     const orderData = {
                         items: cartItems,
                         totalPrice: totalPrice,
@@ -292,19 +298,52 @@ getFirebaseConfig().then(firebaseConfig => {
                         status: 'pending',
                         timestamp: Date.now(),
                         userId: user.uid,
-                        customerName: user.displayName
+                        customerName: customerName,
+                        tableNumber: tableNumber,
+                        notes: orderNotes, // Standard field
+                        orderNotes: orderNotes // For backward compatibility
                     };
     
-                    // Save to customer-orders
+                    // Save to database
                     const database = getDatabase();
-                    const orderRef = ref(database, `customer-orders/${user.uid}/${Date.now()}`);
+                    const orderRef = ref(database, `customer-orders/${user.uid}/${orderData.timestamp}`);
                     await set(orderRef, orderData);
     
-                    // Clear cart after successful order
+                    // Also save to all-orders
+                    const allOrdersRef = ref(database, `all-orders/${orderData.timestamp}`);
+                    await set(allOrdersRef, orderData);
+    
+                    // Clear cart
                     const cartRef = ref(database, `customers/${user.uid}/cart`);
                     await remove(cartRef);
     
-                    // Show success message dengan animasi
+                    // Send Telegram notification - THIS IS THE CRUCIAL FIX
+                    try {
+                        const notificationResponse = await fetch('/send-order-notification', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                ...orderData,
+                                // Explicitly include all necessary fields
+                                paymentMethod: 'QRIS',
+                                alertType: 'qris_payment',
+                                needsVerification: true
+                            })
+                        });
+    
+                        if (!notificationResponse.ok) {
+                            const errorText = await notificationResponse.text();
+                            console.error('Telegram notification failed:', errorText);
+                            // Continue even if notification fails
+                        }
+                    } catch (telegramError) {
+                        console.error('Telegram notification error:', telegramError);
+                        // Continue even if notification fails
+                    }
+    
+                    // Show success message
                     await Swal.fire({
                         icon: 'success',
                         title: 'Pembayaran Berhasil!',
@@ -323,8 +362,123 @@ getFirebaseConfig().then(firebaseConfig => {
                         }
                     });
     
-                    // Redirect to order history
-                    window.location.href = '/User/Dashboard.html';
+                    const { value: formValues } = await Swal.fire({
+                        html:
+                        `
+                         <div class="max-w-md mx-auto my-10 p-6 bg-white rounded-lg shadow-md">
+                            <div class="mb-6">
+                                <p class="text-gray-600">Yuk beri testimonial mu ketika belanja</p>
+                            </div>
+                            
+                            <form id="testimonialForm" class="space-y-4">
+                                <div>
+                                    <label for="customerName" class="block text-sm text-start font-medium text-gray-700 mb-1">Nama : </label>
+                                    <input 
+                                        id="customerName" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                        placeholder="Nama"
+                                        required
+                                    >
+                                </div>
+                                
+                                <div>
+                                    <label for="productName" class="block text-sm text-start font-medium text-gray-700 mb-1">Menu Favorit</label>
+                                    <input 
+                                        id="productName" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                        placeholder="Produk Favorit yg sering dibeli"
+                                        required
+                                    >
+                                </div>
+                                
+                                <div>
+                                    <label for="testimonialText" class="block text-start text-sm font-medium text-gray-700 mb-1">Testimonial</label>
+                                    <div class="relative">
+                                        <textarea 
+                                            id="testimonialText" 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                            placeholder="Testimonial Anda (maks 100 karakter)" 
+                                            maxlength="100"
+                                            rows="4"
+                                            required
+                                        ></textarea>
+                                        <div class="absolute bottom-2 right-2 text-xs text-gray-500">
+                                            <span id="charCount">0</span>/100
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        `,
+                        focusConfirm: false,
+                        showCancelButton: true,
+                        confirmButtonText: 'Kirim',
+                        cancelButtonText: 'Batal',
+                        didOpen: () => {
+                            // Tambahkan penghitung karakter
+                            document.getElementById('testimonialText').addEventListener('input', function() {
+                                document.getElementById('charCount').textContent = this.value.length;
+                            });
+                        },
+                        preConfirm: () => {
+                            const customerName = document.getElementById('customerName').value;
+                            const productName = document.getElementById('productName').value;
+                            const testimonialText = document.getElementById('testimonialText').value;
+                    
+                            
+                    
+                            return {
+                                customerName: customerName,
+                                productName: productName,
+                                testimonialText: testimonialText
+                            };
+                        }
+                    });
+                    if (formValues) {
+                        try {
+                            console.log("Data yang akan dikirim ke server:", formValues);
+                            
+                            const response = await fetch('/submit-testimonial', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    customerName: formValues.customerName,
+                                    productName: formValues.productName,
+                                    testimonial: formValues.testimonialText
+                                }),
+                            });
+                    
+                            const result = await response.json();
+                            console.log("Hasil dari server:", result);
+                    
+                            if (response.ok) {
+                                await Swal.fire({
+                                    icon: 'success',
+                                    title: 'Terima Kasih!',
+                                    text: 'Testimonial Anda telah berhasil dikirim.',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                await Swal.fire({
+                                    icon: 'error',
+                                    title: 'Oops...',
+                                    text: 'Gagal mengirim testimonial: ' + result.message,
+                                });
+                            }
+                        } catch (error) {
+                            console.error("Error:", error);
+                            await Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: 'Terjadi kesalahan: ' + error.message,
+                            });
+                        }
+                    }
+                    
+                   
                 }
             }
         } catch (error) {
@@ -335,11 +489,10 @@ getFirebaseConfig().then(firebaseConfig => {
                 text: 'Silakan coba lagi: ' + error.message
             });
         }
-    }
-    // First, initialize jsPDF from the window object
-    const { jsPDF } = window.jspdf;
-    async function handleCashPayment(user, cartItems, totalPrice) {
-        const receiptHTML = generateReceiptHTML(cartItems, totalPrice, user.displayName);
+    }    
+
+    async function handleCashPayment(user, cartItems, totalPrice, customerName, tableNumber) {
+        const receiptHTML = generateReceiptHTML(cartItems, totalPrice, customerName, tableNumber);
         
         // Tampilkan modal nota pembayaran dan tunggu respon user
         const result = await Swal.fire({
@@ -355,128 +508,217 @@ getFirebaseConfig().then(firebaseConfig => {
         if (result.isConfirmed) {
             try {
                 // Create new PDF document
-                const doc = new jsPDF({
+                const doc = new window.jspdf.jsPDF({
                     orientation: 'portrait',
                     unit: 'mm',
                     format: [80, 200]
                 });
     
-                    // Load and add logo
-            await new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    try {
-                        // Calculate dimensions to maintain aspect ratio
-                        const imgWidth = 10;
-                        const imgHeight = (img.height * imgWidth) / img.width;
-                        
-                        // Add image to PDF, centered at the top
-                        doc.addImage(
-                            img, 
-                            'PNG', 
-                            (10 - imgWidth) / 2, // center horizontally
-                            5, // top margin
-                            imgWidth,
-                            imgHeight
-                        );
-                        resolve();
-                    } catch (err) {
-                        console.error('Error adding image to PDF:', err);
-                        resolve(); // Continue without logo if there's an error
-                    }
-                };
-                img.onerror = () => {
-                    console.error('Error loading logo');
-                    resolve(); // Continue without logo if loading fails
-                };
-                img.src = '/img/logo.png';
-            });
-    
-            // Set font
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-    
-            // Header text (adjusted y-positions to accommodate logo)
-            doc.setFontSize(12);
-            doc.text('Nature Coffe', 40, 30, { align: 'center' });
-            doc.setFontSize(8);
-            doc.text('Jalan Pantura', 40, 35, { align: 'center' });
-            doc.text('Telp: 12345678', 40, 40, { align: 'center' });
-    
-            // Garis pemisah
-            doc.line(5, 42, 75, 42);
-    
-            // Informasi Order
-            const date = new Date().toLocaleString('id-ID');
-            doc.text(`Tanggal: ${date}`, 5, 47);
-            doc.text(`Customer: ${user.displayName}`, 5, 52);
-            doc.text(`Order #${Date.now().toString().slice(-6)}`, 5, 57);
-    
-            // Garis pemisah
-            doc.line(5, 59, 75, 59);
-    
-            // Items
-            let yPos = 64;
-            cartItems.forEach(item => {
-                doc.text(item.name, 5, yPos);
-                doc.text(`${item.quantity} x Rp ${new Intl.NumberFormat('id-ID').format(item.price)}`, 5, yPos + 4);
-                doc.text(`Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}`, 75, yPos + 4, { align: 'right' });
-                yPos += 10;
-            });
-    
-            // Garis pemisah
-            doc.line(5, yPos, 75, yPos);
-            yPos += 5;
-    
-            // Total
-            doc.setFontSize(10);
-            doc.text('Total:', 5, yPos);
-            doc.text(`Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}`, 75, yPos, { align: 'right' });
-            
-            // Catatan
-            const orderNotes = document.getElementById('orderNotes').value;
-            if (orderNotes) {
-                yPos += 10;
+                // Set font
+                doc.setFont('helvetica', 'normal');
                 doc.setFontSize(8);
-                doc.text('Catatan:', 5, yPos);
-                const splitNotes = doc.splitTextToSize(orderNotes, 65);
-                splitNotes.forEach(line => {
-                    yPos += 4;
-                    doc.text(line, 5, yPos);
+    
+                // Header text (adjusted y-positions to accommodate logo)
+                doc.setFontSize(12);
+                doc.text('Jacoba Coffe', 40, 30, { align: 'center' });
+                doc.setFontSize(8);
+                doc.text('Jalan Menuh', 40, 35, { align: 'center' });
+                doc.text('jacoba-coffe.vercel.app', 40, 40, { align: 'center' });
+    
+                // Garis pemisah
+                doc.line(5, 42, 75, 42);
+    
+                // Informasi Order
+                const date = new Date().toLocaleString('id-ID');
+                doc.text(`Tanggal: ${date}`, 5, 47);
+                doc.text(`Customer: ${customerName}`, 5, 52);
+                doc.text(`Meja: ${tableNumber}`, 5, 57);
+                doc.text(`Order #${Date.now().toString().slice(-6)}`, 5, 62);
+    
+                // Garis pemisah
+                doc.line(5, 64, 75, 64);
+    
+                // Items
+                let yPos = 69;
+                cartItems.forEach(item => {
+                    doc.text(item.name, 5, yPos);
+                    doc.text(`${item.quantity} x Rp ${new Intl.NumberFormat('id-ID').format(item.price)}`, 5, yPos + 4);
+                    doc.text(`Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}`, 75, yPos + 4, { align: 'right' });
+                    yPos += 10;
                 });
-            }
     
-            // Garis pemisah
-            yPos += 7;
-            doc.line(5, yPos, 75, yPos);
+                // Garis pemisah
+                doc.line(5, yPos, 75, yPos);
+                yPos += 5;
     
-            // WiFi Info
-            yPos += 5;
-            doc.text('WiFi: NatureCoffe', 40, yPos, { align: 'center' });
-            doc.text('Password: pantura2024', 40, yPos + 4, { align: 'center' });
+                // Total
+                doc.setFontSize(10);
+                doc.text('Total:', 5, yPos);
+                doc.text(`Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}`, 75, yPos, { align: 'right' });
+                
+                // Catatan
+                const orderNotes = document.getElementById('orderNotes').value;
+                if (orderNotes) {
+                    yPos += 10;
+                    doc.setFontSize(8);
+                    doc.text('Catatan:', 5, yPos);
+                    const splitNotes = doc.splitTextToSize(orderNotes, 65);
+                    splitNotes.forEach(line => {
+                        yPos += 4;
+                        doc.text(line, 5, yPos);
+                    });
+                }
     
-            // Footer
-            yPos += 10;
-            doc.text('== Terima kasih ==', 40, yPos, { align: 'center' });
-            doc.text('Selamat menikmati!', 40, yPos + 4, { align: 'center' });
-            
+                // Garis pemisah
+                yPos += 7;
+                doc.line(5, yPos, 75, yPos);
+    
+                // WiFi Info
+                yPos += 5;
+                doc.text('WiFi: CEMPAKA', 40, yPos, { align: 'center' });
+                doc.text('Password: Singaraja2025', 40, yPos + 4, { align: 'center' });
+    
+                // Footer
+                yPos += 10;
+                doc.text('== Terima kasih ==', 40, yPos, { align: 'center' });
+                doc.text('Selamat menikmati!', 40, yPos + 4, { align: 'center' });
+                
                 // Download PDF
                 doc.save(`receipt-${Date.now()}.pdf`);
     
                 // Proses order hanya jika konfirmasi berhasil
-                await processOrder(user, cartItems, totalPrice, 'CASH');
+                await processOrder(user, cartItems, totalPrice, 'CASH', customerName, tableNumber);
                 
                 // Tampilkan pesan sukses
-                await Swal.fire({
-                    icon: 'success',
-                    title: 'Pembayaran Berhasil',
-                    text: 'Pesanan Anda sedang diproses',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-    
-                // Redirect ke halaman dashboard
-                window.location.href = '/User/Dashboard.html';
+             // Tampilkan SweetAlert2 saat pembayaran berhasil
+            await Swal.fire({
+                icon: 'success',
+                title: 'Pembayaran Berhasil',
+                text: 'Pesanan Anda sedang diproses',
+                timer: 2000,
+                showConfirmButton: true
+            });
+
+// Tampilkan form testimonial menggunakan SweetAlert2
+const { value: formValues } = await Swal.fire({
+    html:
+    `
+     <div class="max-w-md mx-auto my-10 p-6 bg-white rounded-lg shadow-md">
+        <div class="mb-6">
+            <p class="text-gray-600">Yuk beri testimonial mu ketika belanja</p>
+        </div>
+        
+        <form id="testimonialForm" class="space-y-4">
+            <div>
+                <label for="customerName" class="block text-sm text-start font-medium text-gray-700 mb-1">Nama : </label>
+                <input 
+                    id="customerName" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    placeholder="Nama"
+                    required
+                >
+            </div>
+            
+            <div>
+                <label for="productName" class="block text-sm text-start font-medium text-gray-700 mb-1">Menu Favorit</label>
+                <input 
+                    id="productName" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    placeholder="Produk Favorit yg sering dibeli"
+                    required
+                >
+            </div>
+            
+            <div>
+                <label for="testimonialText" class="block text-start text-sm font-medium text-gray-700 mb-1">Testimonial</label>
+                <div class="relative">
+                    <textarea 
+                        id="testimonialText" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                        placeholder="Testimonial Anda (maks 100 karakter)" 
+                        maxlength="100"
+                        rows="4"
+                        required
+                    ></textarea>
+                    <div class="absolute bottom-2 right-2 text-xs text-gray-500">
+                        <span id="charCount">0</span>/100
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Kirim',
+    cancelButtonText: 'Batal',
+    didOpen: () => {
+        // Tambahkan penghitung karakter
+        document.getElementById('testimonialText').addEventListener('input', function() {
+            document.getElementById('charCount').textContent = this.value.length;
+        });
+    },
+    preConfirm: () => {
+        const customerName = document.getElementById('customerName').value;
+        const productName = document.getElementById('productName').value;
+        const testimonialText = document.getElementById('testimonialText').value;
+
+        
+
+        return {
+            customerName: customerName,
+            productName: productName,
+            testimonialText: testimonialText
+        };
+    }
+});
+
+// Jika form dikirim, kirim data ke server
+if (formValues) {
+    try {
+        console.log("Data yang akan dikirim ke server:", formValues);
+        
+        const response = await fetch('/submit-testimonial', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                customerName: formValues.customerName,
+                productName: formValues.productName,
+                testimonial: formValues.testimonialText
+            }),
+        });
+
+        const result = await response.json();
+        console.log("Hasil dari server:", result);
+
+        if (response.ok) {
+            await Swal.fire({
+                icon: 'success',
+                title: 'Terima Kasih!',
+                text: 'Testimonial Anda telah berhasil dikirim.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Gagal mengirim testimonial: ' + result.message,
+            });
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        await Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Terjadi kesalahan: ' + error.message,
+        });
+    }
+}
+// Redirect ke halaman dashboard
+// window.location.href = '/Dashboard';
             } catch (error) {
                 console.error('Error generating PDF:', error);
                 await Swal.fire({
@@ -486,10 +728,9 @@ getFirebaseConfig().then(firebaseConfig => {
                 });
             }
         }
-        // Jika user membatalkan, tidak ada aksi yang dijalankan
     }
-    
-    function generateReceiptHTML(cartItems, totalPrice, customerName) {
+
+    function generateReceiptHTML(cartItems, totalPrice, customerName, tableNumber) {
         const date = new Date().toLocaleString('id-ID', {
             year: 'numeric',
             month: 'long',
@@ -502,245 +743,157 @@ getFirebaseConfig().then(firebaseConfig => {
         const orderId = Date.now().toString().slice(-6);
         
         return `
-            <div id="receipt-preview" class="bg-white p-8 max-w-[380px] mx-auto font-mono text-sm leading-tight">
-                <div class="text-center mb-6">
-                <img src="/img/logo.png" width="10px" height="auto" class="mx-auto mb-3 object-contain">
-                    <h2 class="text-xl font-bold mb-1">Nature Coffe</h2>
-                    <p class="mb-1">Jalan Pantura</p>
-                    <p class="mb-1">Telp: 12345678</p>
+           <div id="receipt-preview" class="bg-white p-8 max-w-[380px] mx-auto rounded-lg shadow-lg">
+                <div class="text-center mb-4">
+                    <h2 class="font-bold text-xl">Jacoba Coffee</h2>
+                    <p class="text-gray-600 text-sm">Jalan Menuh</p>
+                    <p class="text-gray-600 text-sm">jacoba-coffe.vercel.app</p>
                 </div>
                 
-                <div class="border-t border-b border-black py-3 mb-4 text-left">
-                    <p class="mb-1">Tanggal: ${date}</p>
-                    <p class="mb-1">Customer: ${customerName}</p>
-                    <p class="mb-1">Order #${orderId}</p>
+                <div class="border-t border-b border-gray-200 py-2 mb-4">
+                    <p class="text-sm">Tanggal: ${date}</p>
+                    <p class="text-sm">Customer: ${customerName}</p>
+                    <p class="text-sm">Meja: ${tableNumber}</p>
+                    <p class="text-sm">Order #${orderId}</p>
                 </div>
-    
+                
                 <div class="mb-4">
-                    <div class="flex justify-between mb-2 font-bold">
-                        <span>Item</span>
-                        <span>Subtotal</span>
-                    </div>
-                    ${cartItems.map(item => `
-                        <div class="flex justify-between mb-2">
-                            <div class="flex-1">
-                                <p>${item.name}</p>
-                                <p class="text-gray-600">${item.quantity} x Rp ${new Intl.NumberFormat('id-ID').format(item.price)}</p>
+                    <h3 class="font-semibold mb-2">Pesanan:</h3>
+                    <div class="space-y-2">
+                        ${cartItems.map(item => `
+                            <div class="flex justify-between text-sm">
+                                <div>
+                                    <p>${item.name}</p>
+                                    <p class="text-gray-600">${item.quantity} x Rp ${new Intl.NumberFormat('id-ID').format(item.price)}</p>
+                                </div>
+                                <p>Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
                             </div>
-                            <p class="ml-4">Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}</p>
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
                 </div>
-    
-                <div class="border-t border-black pt-3 mb-4">
-                    <div class="flex justify-between font-bold text-lg">
-                        <p>Total</p>
+                
+                <div class="border-t border-gray-200 pt-2 mb-4">
+                    <div class="flex justify-between font-bold">
+                        <p>Total:</p>
                         <p>Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
                     </div>
                 </div>
-    
+                
                 ${orderNotes ? `
-                    <div class="mb-4 border-t border-black pt-3">
-                        <p class="font-bold mb-1">Catatan:</p>
-                        <p class="whitespace-pre-wrap">${orderNotes}</p>
-                    </div>
+                <div class="mb-4">
+                    <h3 class="font-semibold mb-1">Catatan:</h3>
+                    <p class="text-sm text-gray-700">${orderNotes}</p>
+                </div>
                 ` : ''}
-    
-                <div class="text-center border-t border-black pt-3">
-                    <div class="mb-3">
-                        <p class="font-bold mb-1">WiFi Information</p>
-                        <p>SSID: NatureCoffe</p>
-                        <p>Pass: pantura2024</p>
-                    </div>
-                    <p class="font-bold">== Terima kasih ==</p>
-                    <p>Selamat menikmati!</p>
+                
+                <div class="border-t border-gray-200 pt-2 text-center text-sm">
+                    <p class="font-medium">WiFi: CEMPAKA</p>
+                    <p class="font-medium">Password: Singaraja2025</p>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <p class="font-medium">== Terima kasih ==</p>
+                    <p class="text-sm">Selamat menikmati!</p>
                 </div>
             </div>
         `;
     }
+
+   // Tambahkan ini di bagian import Firebase
+
+   async function processOrder(user, cartItems, totalPrice, paymentMethod, customerName, tableNumber, paymentProof = null) {
+    const database = getDatabase();
+    const orderNotes = document.getElementById('orderNotes').value;
     
-    async function processOrder(user, cartItems, totalPrice, paymentMethod, buktiPembayaran = null) {
-        const database = getDatabase();
-        const orderRef = ref(database, `customer-orders/${user.uid}/${Date.now()}`);
-        
-        // Compress images before saving to database
-        const processedItems = await Promise.all(cartItems.map(async item => {
-            const compressedImage = await compressImage(item.thumbnail);
-            return {
-                ...item,
-                thumbnail: compressedImage
-            };
-        }));
-    
-        // Create order data
-        const orderData = {
-            items: processedItems,
-            totalPrice: totalPrice,
-            paymentMethod: paymentMethod,
-            orderNotes: document.getElementById('orderNotes').value,
-            timestamp: Date.now(),
-            status: 'pending',
-            customerName: user.displayName,
-            customerEmail: user.email
-        };
-    
-        if (buktiPembayaran) {
-            const compressedBukti = await compressImage(buktiPembayaran);
-            orderData.buktiPembayaran = compressedBukti;
-        }
-    
-        try {
-            // Save order to database
-            await set(orderRef, orderData);
-            
-            // Clear cart
-            const cartRef = ref(database, `customers/${user.uid}/cart`);
-            await remove(cartRef);
-    
-            Swal.fire('Sukses', 'Pesanan berhasil diproses', 'success');
-        } catch (error) {
-            console.error('Error processing order:', error);
-            Swal.fire('Error', 'Gagal memproses pesanan', 'error');
-        }
-    }
-    
-    async function compressImage(imageData) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Set target width and maintain aspect ratio
-                const targetWidth = 300;
-                const scaleFactor = targetWidth / img.width;
-                canvas.width = targetWidth;
-                canvas.height = img.height * scaleFactor;
-                
-                // Draw and compress image
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                resolve(canvas.toDataURL('image/jpeg', 0.7));
-            };
-            img.src = imageData;
-        });
-    }
-    function initializeOrderMonitor() {
-        const database = getDatabase();
-        const ordersContainer = document.getElementById('history-user');
-        const auth = getAuth();
-    
-        // Listen for auth state changes
-        onAuthStateChanged(auth, (user) => {
-            if (!user) return;
-    
-            const ordersRef = ref(database, 'customer-orders');
-            
-            // Set up real-time listener
-            onValue(ordersRef, (snapshot) => {
-                const allOrders = snapshot.val();
-                if (!allOrders) {
-                    ordersContainer.innerHTML = '<p class="text-center p-4">No orders found.</p>';
-                    return;
-                }
-    
-                let tableHTML = `
-                    <table class="min-w-full border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="border p-2">Order Time</th>
-                                <th class="border p-2">Customer</th>
-                                <th class="border p-2">Items</th>
-                                <th class="border p-2">Notes</th>
-                                <th class="border p-2">Total</th>
-                                <th class="border p-2">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-    
-                // Process all orders
-                const orders = [];
-                Object.entries(allOrders).forEach(([userId, userOrders]) => {
-                    Object.entries(userOrders).forEach(([orderId, orderData]) => {
-                        orders.push({
-                            orderId,
-                            timestamp: parseInt(orderId),
-                            ...orderData
-                        });
-                    });
-                });
-    
-                // Sort orders by timestamp (newest first)
-                orders.sort((a, b) => b.timestamp - a.timestamp);
-    
-                // Generate table rows
-                orders.forEach(order => {
-                    const orderTime = new Date(order.timestamp).toLocaleString('id-ID', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-    
-                    let itemsList = '';
-                    let totalPrice = 0;
-    
-                    // Process items
-                    if (order.items) {
-                        Object.values(order.items).forEach(item => {
-                            itemsList += `${item.name} (${item.quantity}x Rp ${new Intl.NumberFormat('id-ID').format(item.price)})<br>`;
-                            totalPrice += (item.price * (item.quantity || 1));
-                        });
-                    }
-    
-                    // Add status color classes
-                    let statusClass = '';
-                    switch (order.status?.toLowerCase()) {
-                        case 'completed':
-                            statusClass = 'bg-green-100 text-green-800';
-                            break;
-                        case 'pending':
-                            statusClass = 'bg-yellow-100 text-yellow-800';
-                            break;
-                        case 'cancelled':
-                            statusClass = 'bg-red-100 text-red-800';
-                            break;
-                        default:
-                            statusClass = 'bg-gray-100 text-gray-800';
-                    }
-    
-                    tableHTML += `
-                        <tr class="hover:bg-gray-50">
-                            <td class="border p-2">${orderTime}</td>
-                            <td class="border p-2">
-                                <div class="font-medium">${order.customerName || 'N/A'}</div>
-                                <div class="text-sm text-gray-600">${order.customerEmail || ''}</div>
-                            </td>
-                            <td class="border p-2">${itemsList}</td>
-                            <td class="border p-2">${order.orderNotes || '-'}</td>
-                            <td class="border p-2">Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</td>
-                            <td class="border p-2">
-                                <span class="px-2 py-1 rounded-full text-sm ${statusClass} capitalize">
-                                    ${order.status || 'pending'}
-                                </span>
-                            </td>
-                        </tr>
-                    `;
-                });
-    
-                tableHTML += `
-                        </tbody>
-                    </table>
-                `;
-    
-                ordersContainer.innerHTML = tableHTML;
-            });
-        });
+    // Validate payment method
+    const validPaymentMethods = ['CASH', 'QRIS'];
+    if (!validPaymentMethods.includes(paymentMethod)) {
+        throw new Error('Invalid payment method');
     }
 
-    // Initialize the monitor when the page loads
-    document.addEventListener('DOMContentLoaded', initializeOrderMonitor);
-    });
+    // Format items data
+    const formattedItems = Array.isArray(cartItems) 
+        ? cartItems 
+        : Object.values(cartItems || {}).map(item => ({
+            name: item.name || 'Unknown Item',
+            quantity: item.quantity || 1,
+            price: item.price || 0
+        }));
+
+    // Prepare complete order data
+    const orderData = {
+        items: formattedItems,
+        totalPrice: totalPrice,
+        paymentMethod: paymentMethod, // Include payment method
+        status: paymentMethod === 'CASH' ? 'paid' : 'pending',
+        timestamp: Date.now(),
+        userId: user.uid,
+        customerName: customerName || 'Guest',
+        tableNumber: tableNumber || 'N/A',
+        notes: orderNotes || '',
+        orderNotes: orderNotes || '', // For backward compatibility
+        ...(paymentMethod === 'QRIS' && { 
+            paymentProof: paymentProof,
+            needsVerification: true
+        })
+    };
+
+    try {
+        // Save to database
+        const orderRef = ref(database, `customer-orders/${user.uid}/${orderData.timestamp}`);
+        await set(orderRef, orderData);
+
+        // Also save to all-orders
+        const allOrdersRef = ref(database, `all-orders/${orderData.timestamp}`);
+        await set(allOrdersRef, orderData);
+
+        // Clear cart
+        const cartRef = ref(database, `customers/${user.uid}/cart`);
+        await remove(cartRef);
+
+        // Send Telegram notification
+        try {
+            const notificationResponse = await fetch('/send-order-notification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...orderData,
+                    // Ensure all required fields are included
+                    paymentMethod: paymentMethod,
+                    alertType: 'new_order',
+                    // Include both notes fields for compatibility
+                    notes: orderNotes,
+                    orderNotes: orderNotes
+                })
+            });
+
+            if (!notificationResponse.ok) {
+                const errorText = await notificationResponse.text();
+                console.error('Notification failed:', errorText);
+                throw new Error(`Notification failed: ${errorText}`);
+            }
+            
+            console.log('Notification sent successfully');
+        } catch (telegramError) {
+            console.error('Telegram notification error:', telegramError);
+            // Continue even if notification fails
+        }
+
+        return {
+            orderId: orderData.timestamp,
+            paymentMethod: paymentMethod
+        };
+
+    } catch (error) {
+        console.error('Order processing error:', {
+            error: error.message,
+            stack: error.stack,
+            orderData: orderData
+        });
+        throw new Error(`Failed to process order: ${error.message}`);
+    }
+}
 });    
 

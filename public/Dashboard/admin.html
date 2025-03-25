@@ -16,14 +16,10 @@
     <script defer type="module" src="/Dashboard/controller/weekadd.js"></script>
     <script defer type="module" src="/Dashboard/controller/fetch-menu.js"></script>
     <script defer type="module" src="/Dashboard/controller/monitoring.js"></script>
+    <script defer src="/Dashboard/controller/testi.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        #hide-element {
-            display: none;
-        }
-        #content {
-            display: none;
-        }
+      
         @import url('https://fonts.googleapis.com/css?family=Karla:400,700&display=swap');
         .font-family-karla { font-family: karla; }
         .bg-sidebar { background: #3e1e04; }
@@ -45,18 +41,18 @@
             </button>
         </div>
         <nav class="text-white text-base font-semibold pt-3">
-            <a href="/Dashboard/admin.html" class="flex items-center active-nav-link text-white py-4 pl-6 nav-item">
+            <a href="/admin" class="flex items-center active-nav-link text-white py-4 pl-6 nav-item">
                 <i class="fa-solid fa-house mr-3"></i>
                 Dashboard
             </a>
-            <a href="/Dashboard/statistic.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+            <a href="/statistic" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
                 <i class="fa-solid fa-chart-simple mr-3"></i>
                 Statistic
             </a>
         </nav>
     </aside>
 
-    <div id="hide-element" class="w-full flex flex-col h-screen overflow-y-auto">
+    <div class="w-full flex flex-col h-screen overflow-y-auto">
         <!-- Desktop Header -->
         <header class="w-full items-center bg-white py-2 px-6 hidden sm:flex">
             <div class="w-1/2"></div>
@@ -67,7 +63,7 @@
                 <button x-show="isOpen" @click="isOpen = false" class="h-full w-full fixed inset-0 cursor-default"></button>
                 <div x-show="isOpen" class="absolute w-32 bg-white rounded-lg shadow-lg py-2 mt-16">
                     <a href="#" id="change-password" class="block px-4 py-2 account-link hover:text-white">Change password</a>
-                    <a href="#" id="logout-session" class="block px-4 py-2 account-link hover:text-white">Sign Out</a>
+                    <a href="#" id="logoutBtn" class="block px-4 py-2 account-link hover:text-white">Sign Out</a>
                 </div>
             </div>
         </header>
@@ -75,7 +71,7 @@
         <!-- Mobile Header & Nav -->
         <header x-data="{ isOpen: false }" class="w-full bg-sidebar py-5 px-6 sm:hidden">
             <div class="flex items-center justify-between">
-                <a href="/Dashboard/admin.html" class="text-white text-3xl font-semibold uppercase hover:text-gray-300">DASHBOARD</a>
+                <a href="/admin" class="text-white text-3xl font-semibold uppercase hover:text-gray-300">DASHBOARD</a>
                 <button @click="isOpen = !isOpen" class="text-white text-3xl focus:outline-none">
                     <i x-show="!isOpen" class="fas fa-bars"></i>
                     <i x-show="isOpen" class="fas fa-times"></i>
@@ -84,11 +80,11 @@
 
             <!-- Dropdown Nav -->
             <nav :class="isOpen ? 'flex': 'hidden'" class="flex flex-col pt-4">
-                <a href="/Dashboard/admin.html" class="flex items-center active-nav-link text-white py-4 pl-6 nav-item">
+                <a href="/admin" class="flex items-center active-nav-link text-white py-4 pl-6 nav-item">
                     <img src="/img/home.webp" width="30px" height="auto" class="mr-3" alt="">
                      Dashboard
                  </a>
-                 <a href="/Dashboard/statistic.html" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
+                 <a href="/statistic" class="flex items-center text-white opacity-75 hover:opacity-100 py-4 pl-6 nav-item">
                      <img src="/img/statistik.webp" width="30px" height="auto" class="mr-3" alt="">
                      Statistik
                  </a>
@@ -222,6 +218,27 @@
                                 </tr>
                             </thead>
                             <tbody id="week-list" class="text-gray-700">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- testimonial-->
+                <div class="w-full mt-3">
+                    <p class="text-xl pb-3 flex items-center">
+                        <i class="fas fa-list mr-3"></i> Testimonial
+                    </p>
+                   
+                    <div class="bg-white overflow-auto rounded-lg">
+                        <table class="min-w-full bg-white">
+                            <thead class="bg-[#3e1e04] text-white">
+                                <tr>
+                                    <th class="w-1/3 text-center py-3 px-4 font-semibold text-sm">Nama</th>
+                                    <th class="w-1/3 text-center py-3 px-4 font-semibold text-sm">Produk Favorit</th>
+                                    <th class="text-center py-3 px-4 font-semibold text-sm">Testimonial</th>
+                                    <th class="text-center py-3 px-4 font-semibold text-sm">CTA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="testimonial-table-body" class="text-gray-700">
                             </tbody>
                         </table>
                     </div>

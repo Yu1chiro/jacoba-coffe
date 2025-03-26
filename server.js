@@ -88,7 +88,7 @@ app.get('/firebase-config', (req, res) => {
 
   res.json(firebaseConfig);
 });
-app.get('/auth-config', ipLimiter, (req, res) => {
+app.get('/auth-config', (req, res) => {
   const firebaseClientConfig = {
     apiKey: process.env.FIREBASE_API_KEY,
     authDomain: process.env.FIREBASE_AUTH_DOMAIN,

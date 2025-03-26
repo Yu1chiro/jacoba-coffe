@@ -131,7 +131,7 @@ const ipLimiter = rateLimit({
 });
 
 // Terapkan ipLimiter secara global
-app.use(ipLimiter);
+// app.use(ipLimiter);
 // Rate-limiter berbasis email
 const emailLimiter = new RateLimiterMemory({
   points: 5, // Maksimal 5 percobaan
@@ -329,7 +329,7 @@ app.post('/send-order-notification', async (req, res) => {
       });
   }
 });
-app.post('/sessionLogin', async (req, res) => {
+app.post('/sessionLogin', ipLimiter, async (req, res) => {
   const { idToken, email } = req.body;
 
   try {

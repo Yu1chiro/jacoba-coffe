@@ -329,7 +329,7 @@ app.post('/send-order-notification', async (req, res) => {
       });
   }
 });
-app.post('/sessionLogin', ipLimiter, async (req, res) => {
+app.post('/sessionLogin', async (req, res) => {
   const { idToken, email } = req.body;
 
   try {

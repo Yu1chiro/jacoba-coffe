@@ -141,7 +141,7 @@ const emailLimiter = new RateLimiterMemory({
   points: 5, // Maksimal 5 percobaan
   duration: 15 * 60, // 15 menit
 });
-app.post('/submit-testimonial', ipLimiter, async (req, res) => {
+app.post('/submit-testimonial', async (req, res) => {
   const { customerName, productName, testimonial } = req.body;
   
   // Validasi data di server
@@ -186,7 +186,7 @@ app.post('/submit-testimonial', ipLimiter, async (req, res) => {
     res.status(500).json({ message: 'Gagal mengirim testimonial', error: error.message });
   }
 });
-app.get('/fetch-testimonials', ipLimiter, async (req, res) => {
+app.get('/fetch-testimonials', async (req, res) => {
   try {
     const response = await axios.get(process.env.NOCODB_API_URL, {
       headers: {
@@ -293,7 +293,7 @@ async function sendTelegramNotification(orderData) {
   }
 }
 
-app.post('/send-order-notification', ipLimiter, async (req, res) => {
+app.post('/send-order-notification', async (req, res) => {
   try {
       const orderData = req.body;
       
@@ -333,7 +333,7 @@ app.post('/send-order-notification', ipLimiter, async (req, res) => {
       });
   }
 });
-app.post('/sessionLogin', ipLimiter, async (req, res) => {
+app.post('/sessionLogin', async (req, res) => {
   const { idToken, email } = req.body;
 
   try {

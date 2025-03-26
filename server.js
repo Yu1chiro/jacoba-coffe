@@ -88,7 +88,7 @@ app.get('/firebase-config', (req, res) => {
 
   res.json(firebaseConfig);
 });
-app.get('/auth-config', rateLimit, (req, res) => {
+app.get('/auth-config', ipLimiter, (req, res) => {
   const firebaseClientConfig = {
     apiKey: process.env.FIREBASE_API_KEY,
     authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -114,9 +114,6 @@ app.get("/asset/:id", async (req, res) => {
   }
 });
 
-// Konfigurasi rate-limiting
-
-
 // Rate-limiter berbasis IP
 const ipLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 menit
@@ -133,7 +130,6 @@ const ipLimiter = rateLimit({
   },
 });
 
-
 // Terapkan ipLimiter secara global
 app.use(ipLimiter);
 // Rate-limiter berbasis email
@@ -141,7 +137,7 @@ const emailLimiter = new RateLimiterMemory({
   points: 5, // Maksimal 5 percobaan
   duration: 15 * 60, // 15 menit
 });
-app.post('/submit-testimonial', ipLimiter, async (req, res) => {
+app.post('/submit-testimonial', async (req, res) => {
   const { customerName, productName, testimonial } = req.body;
   
   // Validasi data di server
@@ -186,7 +182,7 @@ app.post('/submit-testimonial', ipLimiter, async (req, res) => {
     res.status(500).json({ message: 'Gagal mengirim testimonial', error: error.message });
   }
 });
-app.get('/fetch-testimonials', ipLimiter, async (req, res) => {
+app.get('/fetch-testimonials',  async (req, res) => {
   try {
     const response = await axios.get(process.env.NOCODB_API_URL, {
       headers: {
@@ -293,7 +289,7 @@ async function sendTelegramNotification(orderData) {
   }
 }
 
-app.post('/send-order-notification', ipLimiter, async (req, res) => {
+app.post('/send-order-notification', async (req, res) => {
   try {
       const orderData = req.body;
       

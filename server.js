@@ -88,7 +88,7 @@ app.get('/firebase-config', (req, res) => {
 
   res.json(firebaseConfig);
 });
-app.get('/auth-config', (req, res) => {
+app.get('/auth-config', rateLimit, (req, res) => {
   const firebaseClientConfig = {
     apiKey: process.env.FIREBASE_API_KEY,
     authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -115,20 +115,7 @@ app.get("/asset/:id", async (req, res) => {
 });
 
 // Konfigurasi rate-limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 menit
-  max: 5, // Maksimal 5 percobaan login per IP
-  message: 'Terlalu banyak percobaan login, silakan coba lagi setelah 15 menit.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    res.status(429).json({
-      status: 'error',
-      message: 'Terlalu banyak percobaan login, silakan coba lagi setelah 15 menit.',
-      retryAfter: 15 * 60, // Waktu tunggu dalam detik
-    });
-  },
-});
+
 
 // Rate-limiter berbasis IP
 const ipLimiter = rateLimit({
@@ -146,12 +133,15 @@ const ipLimiter = rateLimit({
   },
 });
 
+
+// Terapkan ipLimiter secara global
+app.use(ipLimiter);
 // Rate-limiter berbasis email
 const emailLimiter = new RateLimiterMemory({
   points: 5, // Maksimal 5 percobaan
   duration: 15 * 60, // 15 menit
 });
-app.post('/submit-testimonial', async (req, res) => {
+app.post('/submit-testimonial', ipLimiter, async (req, res) => {
   const { customerName, productName, testimonial } = req.body;
   
   // Validasi data di server
@@ -196,7 +186,7 @@ app.post('/submit-testimonial', async (req, res) => {
     res.status(500).json({ message: 'Gagal mengirim testimonial', error: error.message });
   }
 });
-app.get('/fetch-testimonials', async (req, res) => {
+app.get('/fetch-testimonials', ipLimiter, async (req, res) => {
   try {
     const response = await axios.get(process.env.NOCODB_API_URL, {
       headers: {
@@ -303,7 +293,7 @@ async function sendTelegramNotification(orderData) {
   }
 }
 
-app.post('/send-order-notification', async (req, res) => {
+app.post('/send-order-notification', ipLimiter, async (req, res) => {
   try {
       const orderData = req.body;
       

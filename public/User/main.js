@@ -209,12 +209,8 @@ getFirebaseConfig().then(firebaseConfig => {
             const qrResult = await Swal.fire({
                 title: 'Scan QR Code',
                 html: `
-                    <img src="/User/img/qris.jpeg" class="mx-auto w-64 h-64">
+                    <img src="/User/img/QRIS.jpeg" class="mx-auto w-52 h-auto">
                     <p class="mt-4">Total Pembayaran: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
-                    <div class="mt-4 text-left">
-                        <p class="font-semibold">Catatan Pesanan:</p>
-                        <p>${orderNotes || 'Tidak ada catatan'}</p>
-                    </div>
                 `,
                 confirmButtonText: 'Upload Bukti Pembayaran',
                 showCancelButton: true,
@@ -367,7 +363,8 @@ getFirebaseConfig().then(firebaseConfig => {
                         `
                          <div class="max-w-md mx-auto my-10 p-6 bg-white rounded-lg shadow-md">
                             <div class="mb-6">
-                                <p class="text-gray-600">Yuk beri testimonial mu ketika belanja</p>
+                            <h2 class="font-semibold text-2xl">Hello There!</h2>
+                                <p class="text-gray-600">Yuk beri testimonial mu ketika belanja di Jacoba</p>
                             </div>
                             
                             <form id="testimonialForm" class="space-y-4">
@@ -605,6 +602,7 @@ const { value: formValues } = await Swal.fire({
     `
      <div class="max-w-md mx-auto my-10 p-6 bg-white rounded-lg shadow-md">
         <div class="mb-6">
+        <h2 class="font-semibold text-2xl">Hello There!</h2>
             <p class="text-gray-600">Yuk beri testimonial mu ketika belanja</p>
         </div>
         

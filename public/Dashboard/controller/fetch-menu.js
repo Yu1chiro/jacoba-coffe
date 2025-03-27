@@ -242,6 +242,12 @@ getFirebaseConfig().then(firebaseConfig => {
                             </div>
                         </div>
                         ${paymentProofButton}
+                        <div class="mt-5">
+                        <p class="text-red-600 text-sm font-semibold">
+                        <i class="fa-solid fa-circle-info text-red-600 me-3"></i>
+                        apakah harga untuk setiap produk yg di checkout sudah benar? pastikan untuk mengecek jika ada kesalahan kalkulasi harga
+                        </p>
+                        </div>
                     `,
                     width: 600,
                     showCloseButton: true,

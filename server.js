@@ -8,6 +8,9 @@ import { getDatabase } from 'firebase-admin/database';
 import {rateLimit} from 'express-rate-limit';
 import {RateLimiterMemory} from 'rate-limiter-flexible';
 import axios from "axios";
+
+
+// Simpan token aktif (gunakan database di production)
 dotenv.config();
 const app = express();
 const __dirname = path.resolve();
@@ -241,24 +244,37 @@ async function sendTelegramNotification(orderData) {
       }
 
       // Format notification message
-      let message = `📢 *NEW ORDER* (${orderData.paymentMethod}) ${orderData.status === 'pending' ? '⏳' : '✅'}\n\n`;
-      message += `👤 *Customer*: ${orderData.customerName || 'N/A'}\n`;
-      
-      // Handle items (ensure it's always an array)
-      const items = Array.isArray(orderData.items) ? orderData.items : Object.values(orderData.items || {});
-      message += `🛒 *Items* (${items.length}):\n`;
-      
-      items.forEach(item => {
-          message += `- ${item.name || 'Unknown'} (${item.quantity || 1} x Rp${new Intl.NumberFormat('id-ID').format(item.price || 0)})\n`;
-      });
-      
-      // Add order details
-      message += `\n💰 *Total*: Rp${new Intl.NumberFormat('id-ID').format(orderData.totalPrice || 0)}\n`;
-      message += `💳 *Payment*: ${orderData.paymentMethod}\n`;
-      message += `🪑 *Table*: ${orderData.tableNumber || 'N/A'}\n`;
-      message += `📝 *Notes*: ${orderData.notes || orderData.orderNotes || 'No notes'}\n`;
-      message += `⏰ *Time*: ${new Date(orderData.timestamp).toLocaleString('id-ID')}\n`;
-      
+let message = `══════ ⋆★⋆ ══════\n`;
+message += `🧾 *NEW ORDER* 🧾\n`;
+message += `══════ ⋆★⋆ ══════\n\n`;
+message += `📅 *DATE*: ${new Date(orderData.timestamp).toLocaleString('id-ID')}\n`;
+
+message += `👤 *CUSTOMER*: ${orderData.customerName || 'Walk-in'}\n`;
+
+message += `🪑 *TABLE*: ${orderData.tableNumber || 'N/A'}\n`;
+
+message += `💳 *PAYMENT*: ${orderData.paymentMethod} ${orderData.status === 'pending' ? '⏳' : '✅'}\n\n`;
+
+message += `══════ ⋆★⋆ ══════\n`;
+message += `       🛒 *ORDER ITEMS*\n`;
+message += `══════ ⋆★⋆ ══════\n`;
+
+// Handle items (ensure it's always an array)
+const items = Array.isArray(orderData.items) ? orderData.items : Object.values(orderData.items || {});
+items.forEach((item, index) => {
+    message += `${index + 1}. ${item.name || 'Unknown Item'}\n`;
+    message += `   ${item.quantity || 1} x Rp${new Intl.NumberFormat('id-ID').format(item.price || 0)}\n`;
+    if (item.notes) message += `   📝: ${item.notes}\n`;
+});
+
+message += `\n══════ ⋆★⋆ ══════\n`;
+message += `💵 *SUBTOTAL*: Rp${new Intl.NumberFormat('id-ID').format(orderData.subtotal || orderData.totalPrice || 0)}\n`;
+if (orderData.tax) message += `📊 *TAX (${orderData.taxRate || '10'}%)*: Rp${new Intl.NumberFormat('id-ID').format(orderData.tax || 0)}\n`;
+if (orderData.serviceCharge) message += `⚡ *SERVICE*: Rp${new Intl.NumberFormat('id-ID').format(orderData.serviceCharge || 0)}\n`;
+message += `💰 *TOTAL*: Rp${new Intl.NumberFormat('id-ID').format(orderData.totalPrice || 0)}\n`;
+message += `══════ ⋆★⋆ ══════\n\n`;
+
+message += `📝 *NOTES*: ${orderData.notes || orderData.orderNotes || '-'}\n\n`;
      
 
       // Send text message first
@@ -366,6 +382,8 @@ app.post('/sessionLogout', (req, res) => {
   res.clearCookie('session');
   res.json({ status: 'success' });
 });
+
+
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
   lastModified: false,

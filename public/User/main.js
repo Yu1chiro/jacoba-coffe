@@ -209,7 +209,7 @@ getFirebaseConfig().then(firebaseConfig => {
             const qrResult = await Swal.fire({
                 title: 'Scan QR Code',
                 html: `
-                    <img src="/User/img/QRIS.jpeg" class="mx-auto w-52 h-auto">
+                    <img src="https://ucarecdn.com/4faf444e-10d9-4542-a1fc-f4442a77460b/QRIS.jpeg" class="mx-auto w-52 h-auto">
                     <p class="mt-4">Total Pembayaran: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}</p>
                 `,
                 confirmButtonText: 'Upload Bukti Pembayaran',
